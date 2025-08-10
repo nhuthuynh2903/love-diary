@@ -65,14 +65,31 @@
 
     <!-- Form thêm nhật ký -->
     <h3>✏️ Viết nhật ký mới</h3>
-    <textarea id="newEntry" placeholder="Nhập nội dung..."></textarea><br>
+    <textarea id="textInput" placeholder="Nhập nội dung..."></textarea><br>
+    <input type="file" id="fileInput" accept="image/*,video/*"><br>
     <button onclick="addEntry()">Đăng nhật ký</button>
     <!-- Xóa tới đây -->
 
     <!-- Danh sách nhật ký -->
     <div id="entries"></div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-storage-compat.js"></script>
     <script>
+         // ======= Firebase Config =======
+        const firebaseConfig = {
+            apiKey: "AIzaSyBsumPv8_hk16RcR-mwrx4UVbt8XMzi_2c",
+            authDomain: "love-diary-69c00.firebaseapp.com",
+            projectId: "love-diary-69c00",
+            storageBucket: "love-diary-69c00.appspot.com",
+            messagingSenderId: "299225297515",
+            appId: "1:299225297515:web:dda7bcb35a0c8ae95af72e",
+            measurementId: "G-213TXQLVFX"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
         // Hiển thị lời chúc (Hết sinh nhật thì sẽ chỉ còn dòng countdown nhoa)
         function showMessage() {
             document.getElementById("message").innerHTML = 
@@ -101,32 +118,67 @@
         // Từ dòng này đừng có phá ròii páo nhoa
         // ================== NHẬT KÝ ==================
         //Load dữ liệu
-        function loadEntries() {
-            const entries = JSON.parse(localStorage.getItem("diaryEntries")) || [];
+         function loadEntries() {
+        db.collection("entries").orderBy("date", "desc").onSnapshot(snapshot => {
             const entriesDiv = document.getElementById("entries");
             entriesDiv.innerHTML = "";
-            entries.forEach(entry => {
+
+            snapshot.forEach(doc => {
+                const entry = doc.data();
                 const div = document.createElement("div");
                 div.classList.add("entry");
-                div.innerHTML = `<strong>${entry.date}</strong><br>${entry.text}`;
-                entriesDiv.prepend(div);
+
+                let content = `<strong>${new Date(entry.date).toLocaleString("vi-VN")}</strong><br>`;
+
+                if (entry.text) {
+                    content += `${entry.text}<br>`;
+                }
+                if (entry.fileUrl) {
+                    if (entry.fileType.startsWith("image/")) {
+                        content += `<img src="${entry.fileUrl}" style="max-width: 100%; margin-top: 10px;">`;
+                    } else if (entry.fileType.startsWith("video/")) {
+                        content += `<video controls style="max-width: 100%; margin-top: 10px;">
+                                        <source src="${entry.fileUrl}" type="${entry.fileType}">
+                                    </video>`;
+                    }
+                }
+
+                div.innerHTML = content;
+                entriesDiv.appendChild(div);
             });
-        }
+        });
+    }
 
         //Thêm dữ liệu
-        function addEntry() {
-            const text = document.getElementById("newEntry").value.trim();
-            if (text === "") return;
-            const date = new Date().toLocaleString("vi-VN");
-            const entries = JSON.parse(localStorage.getItem("diaryEntries")) || [];
-            entries.push({ date, text });
-            localStorage.setItem("diaryEntries", JSON.stringify(entries));
-            document.getElementById("newEntry").value = "";
-            loadEntries();
+        async function addEntry() {
+        const text = document.getElementById("textInput").value.trim();
+        const file = document.getElementById("fileInput").files[0];
+        const dateNow = Date.now();
+
+        let fileUrl = "";
+        let fileType = "";
+
+        // Nếu có file thì upload lên Storage
+        if (file) {
+            const storageRef = storage.ref(`uploads/${dateNow}_${file.name}`);
+            await storageRef.put(file);
+            fileUrl = await storageRef.getDownloadURL();
+            fileType = file.type;
         }
 
-        // Tải nhật ký khi mở trang
-        loadEntries();
+        // Lưu vào Firestore
+        await db.collection("entries").add({
+            text: text || "",
+            fileUrl: fileUrl || "",
+            fileType: fileType || "",
+            date: dateNow
+        });
+
+        document.getElementById("textInput").value = "";
+        document.getElementById("fileInput").value = "";
+    }
+
+        window.onload = loadEntries;
     </script>
 </body>
 </html>
