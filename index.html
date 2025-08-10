@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Nhật Ký & Sinh Nhật Bé Bảo Ngọc</title>
+<style>
+    body {
+        text-align: center;
+        background: url('background.png') no-repeat center center/cover;
+        color: rgb(155, 124, 124);
+        font-family: 'Segoe UI', sans-serif;
+    }
+    h1 { font-size: 3em; margin-top: 20px; animation: fadeIn 3s ease-in-out; }
+    h2 { margin-top: 5px; }
+    button, input, textarea {
+        font-size: 1em;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        margin-top: 5px;
+    }
+    button {
+        background-color: rgba(255, 192, 203, 0.925);
+        cursor: pointer;
+    }
+    textarea {
+        width: 90%;
+        min-height: 60px;
+        resize: vertical;
+    }
+    #entries {
+        margin-top: 20px;
+        text-align: left;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 15px;
+        border-radius: 10px;
+    }
+    .entry {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+</style>
+</head>
+<body>
+    <!-- Nhạc nền (Chia sẻ mấy bài đang thích cho nhau cũng được) -->
+    <audio id="bg-music" loop>
+        <source src="I Do.mp3" type="audio/mpeg">
+    </audio>
+
+    <!--Xóa dòng này sau sn--><h1>🎉 Happy Birthday Bé Bảo Ngọc 🎉</h1>
+    <h2>📖 Nhật Ký Anh & Bé 📖</h2>
+
+    <!-- Hết sinh nhật thì xóa cái đồng này nè-->
+    <!-- Nút mở lời chúc -->
+    <p>Nhấn vào nút bên dưới để xem lời chúc 💌</p>
+    <button onclick="showMessage()">Mở bất ngờ</button>
+    <p id="message" style="display:none; font-size:1.2em;"></p>
+
+    <!-- Form thêm nhật ký -->
+    <h3>✏️ Viết nhật ký mới</h3>
+    <textarea id="newEntry" placeholder="Nhập nội dung..."></textarea><br>
+    <button onclick="addEntry()">Đăng nhật ký</button>
+    <!-- Xóa tới đây -->
+
+    <!-- Danh sách nhật ký -->
+    <div id="entries"></div>
+
+    <script>
+        // Hiển thị lời chúc (Hết sinh nhật thì sẽ chỉ còn dòng countdown nhoa)
+        function showMessage() {
+            document.getElementById("message").innerHTML = 
+                "🎂💖 Chúc mừng sinh nhật bé iu 💖, anh iu bé nhìu 💖💖 " +
+                "Sinh nhật thứ 2 với bé òii 💖, từng giây phút bên nhau 💖 hơn một năm qua anh rất vui 💖. " +
+                "Có thể ít nhất là 3 năm tới 💖 anh sẽ không thể bên cạnh bé 💖 trong ngày sinh nhật được nữa 💖, nhưng bé hãy yên tâm 💖 và chờ anh nhoaa 💖. " +
+                "Đi rồi 💻💖 luyện trình code chung với bé nè 💖, lâu lâu có đi đâu chơi 🎡💖 có gì vui thì up lên trang web này 📸💖 chia sẻ cho nhau nha 💖. " +
+                "Hẹn gặp em 💖 trong " + countdownDays() + " ngày nữa! (có thể thay đổi)";
+            document.getElementById("message").style.display = "block";
+        }
+
+        // Đếm ngược ngày gặp lại
+        function countdownDays() {
+            const meetDate = new Date("2028-08-17");
+            const now = new Date();
+            return Math.ceil((meetDate - now) / (1000 * 60 * 60 * 24));
+        }
+
+        // Phát nhạc khi click
+        const music = document.getElementById('bg-music');
+        document.addEventListener('click', function playOnce() {
+            music.play();
+            document.removeEventListener('click', playOnce);
+        });
+
+        // Từ dòng này đừng có phá ròii páo nhoa
+        // ================== NHẬT KÝ ==================
+        //Load dữ liệu
+        function loadEntries() {
+            const entries = JSON.parse(localStorage.getItem("diaryEntries")) || [];
+            const entriesDiv = document.getElementById("entries");
+            entriesDiv.innerHTML = "";
+            entries.forEach(entry => {
+                const div = document.createElement("div");
+                div.classList.add("entry");
+                div.innerHTML = `<strong>${entry.date}</strong><br>${entry.text}`;
+                entriesDiv.prepend(div);
+            });
+        }
+
+        //Thêm dữ liệu
+        function addEntry() {
+            const text = document.getElementById("newEntry").value.trim();
+            if (text === "") return;
+            const date = new Date().toLocaleString("vi-VN");
+            const entries = JSON.parse(localStorage.getItem("diaryEntries")) || [];
+            entries.push({ date, text });
+            localStorage.setItem("diaryEntries", JSON.stringify(entries));
+            document.getElementById("newEntry").value = "";
+            loadEntries();
+        }
+
+        // Tải nhật ký khi mở trang
+        loadEntries();
+    </script>
+</body>
+</html>
