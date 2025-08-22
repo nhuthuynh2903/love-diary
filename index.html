@@ -319,10 +319,10 @@
         content += `
           <div style="margin-top:10px;">
             <button onclick="editEntry('${doc.id}', '${entry.text.replace(/'/g,"\\'")}')">✏️</button>
-            <button onclick="deleteEntry('${doc.id}')">🗑️</button>
+            
           </div>
         `;
-
+//<button onclick="deleteEntry('${doc.id}')">🗑️</button> đặt lại ở trong div
         div.innerHTML = content;
         entriesDiv.appendChild(div);
         });
@@ -359,12 +359,12 @@
         document.getElementById("fileInput").value = "";
       }
 
-      async function deleteEntry(id) {
+      /*async function deleteEntry(id) {
         if (confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) {
           await db.collection("entries").doc(id).delete();
           alert("Đã xóa thành công!");
         }
-      }
+      }*/
 
       async function editEntry(id, oldText) {
         const newText = prompt("Nhập nội dung mới:", oldText);
