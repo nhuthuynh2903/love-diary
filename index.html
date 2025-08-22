@@ -73,12 +73,25 @@
     <p id="message" style="display: none; font-size: 1.2em"></p>
 
     <h3>✏️ Viết nhật ký mới</h3>
-    <textarea id="textInput" placeholder="Nhập nội dung..."></textarea><br />
+    <textarea id="textInput" placeholder="Nhập nội dung..."></textarea><br>
+    <emoji-picker></emoji-picker><br />
     <input type="file" id="fileInput" accept="image/*,video/*" /><br />
     <button onclick="addEntry()">Đăng nhật ký</button>
 
     <div id="entries"></div>
 
+    <script type="module">
+      import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js';
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const picker = document.querySelector("emoji-picker");
+        const textarea = document.querySelector("#textInput");
+
+        picker.addEventListener("emoji-click", event => {
+          textarea.value += event.detail.unicode; // thêm emoji vào text
+        });
+      });
+    </script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
     <script>
