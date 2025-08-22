@@ -2,7 +2,7 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <title>Nhật Ký & Sinh Nhật Bé Bảo Ngọc</title>
+    <title>Nhật Ký Tình Yêu</title>
     <style>
       body {
         text-align: center;
@@ -42,16 +42,125 @@
       #entries {
         margin-top: 20px;
         text-align: left;
-        max-width: 800px;
+        max-width: 700px;
         margin-left: auto;
         margin-right: auto;
         background: rgba(255, 255, 255, 0.8);
         padding: 15px;
         border-radius: 10px;
       }
-      .entry {
-        padding: 10px;
-        border-bottom: 1px solid #ccc;
+      .heart {
+        width: 200px;
+        height: 200px;
+        margin: 40px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        animation: heartbeat 1s infinite;
+      }
+      .heart svg {
+        width: 100%;
+        height: 100%;
+      }
+      .heart svg path {
+        animation: heartbeatColor 1s infinite;
+      }
+      .number-wrapper {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .number {
+        font-size: 36px;
+        font-weight: bold;
+        color: #b22222;
+      }
+      .label {
+        font-size: 16px;
+        font-weight: bold;
+        color: #b22222;
+        margin-top: 4px;
+      }
+
+      .falling-heart {
+        position: fixed;
+        top: -20px;
+        color: pink;
+        animation: fall linear forwards;
+        z-index: 9999;
+      }
+
+      .timeline {
+        position: relative;
+        margin: 20px auto;
+        padding: 10px 0;
+        max-width: 600px;
+        text-align: left;
+      }
+
+      .timeline::after {
+        content: "";
+        position: absolute;
+        width: 5px;
+        background-color: #ccc;
+        top: 10px;
+        bottom: 10px;
+        left: 21px;
+      }
+
+      .timeline-item {
+        padding: 20px 20px 20px 60px;
+        position: relative;
+        border-left: none;
+        margin: 0px 0;
+      }
+
+      .timeline-item::before {
+        content: "";
+        position: absolute;
+        top: 22px;
+        left: 0px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: pink;
+        border: 2px solid #fff;
+        z-index: 1;
+      }
+
+      @keyframes fall {
+        to {
+          transform: translateY(100vh);
+          opacity: 0;
+        }
+      }
+
+      @keyframes heartbeat {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        25% {
+          transform: scale(1.1);
+        }
+        50% {
+          transform: scale(0.95);
+        }
+        75% {
+          transform: scale(1.05);
+        }
+      }
+      @keyframes heartbeatColor {
+        0%,
+        100% {
+          fill: rgb(255, 192, 203);
+        }
+        50% {
+          fill: rgb(247, 170, 182);
+        }
       }
       @keyframes fadeIn {
         from {
@@ -64,35 +173,48 @@
     </style>
   </head>
   <body>
-    <!--<audio id="bg-music" loop>
+    <!-- <audio id="bg-music" loop>
       <source src="I Do.mp3" type="audio/mpeg" />
-    </audio>-->
+    </audio> -->
 
-    <h1>🎉 Happy Birthday Bé Bảo Ngọc 🎉</h1>
+    <h1>🎉 Nhứt Huỳnh & Bảo Ngọc 🎉</h1>
     <h2>📖 Nhật Ký Anh & Bé 📖</h2>
 
-    <p>Nhấn vào nút bên dưới để xem lời chúc 💌</p>
-    <button onclick="showMessage()">Mở bất ngờ</button>
-    <p id="message" style="display: none; font-size: 1.2em"></p>
+    <!-- Đếm ngày yêu -->
+    <div class="heart">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+             2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09
+             C13.09 3.81 14.76 3 16.5 3 
+             19.58 3 22 5.42 22 8.5
+             c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+          fill="pink"
+        />
+      </svg>
+      <div class="number-wrapper">
+        <div class="number" id="loveDays">0</div>
+        <div class="label">DAYS</div>
+      </div>
+    </div>
 
     <h3>✏️ Viết nhật ký mới</h3>
-    <textarea id="textInput" placeholder="Nhập nội dung..."></textarea><br>
-    <button onclick="displayEmojiBox">Emoji</button>
-    <center><emoji-picker id="emoji-box"></emoji-picker></center><br />
+    <textarea id="textInput" placeholder="Nhập nội dung..."></textarea><br />
+    <button onclick="displayEmojiBox()">Emoji</button>
+    <center><emoji-picker id="emoji-box"></emoji-picker></center>
+    <br />
     <input type="file" id="fileInput" accept="image/*,video/*" /><br />
     <button onclick="addEntry()">Đăng nhật ký</button>
 
-    <div id="entries"></div>
+    <div id="entries" class="timeline"></div>
 
     <script type="module">
-      import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js';
-
+      import "https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js";
       document.addEventListener("DOMContentLoaded", () => {
         const picker = document.querySelector("emoji-picker");
         const textarea = document.querySelector("#textInput");
-
-        picker.addEventListener("emoji-click", event => {
-          textarea.value += event.detail.unicode; // thêm emoji vào text
+        picker.addEventListener("emoji-click", (event) => {
+          textarea.value += event.detail.unicode;
         });
       });
     </script>
@@ -112,29 +234,21 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.firestore();
 
-      // Hiển thị lời chúc
-      function showMessage() {
-        document.getElementById("message").innerHTML =
-          "🎂💖 Chúc mừng sinh nhật bé iu 💖, anh iu bé nhìu 💖💖 " +
-          "Sinh nhật thứ 2 với bé òii 💖, từng giây phút bên nhau 💖 hơn một năm qua anh rất vui 💖. " +
-          "Có thể ít nhất là 3 năm tới 💖 anh sẽ không thể bên cạnh bé 💖 trong ngày sinh nhật được nữa 💖, nhưng bé hãy yên tâm 💖 và chờ anh nhoaa 💖. " +
-          "Đi rồi 💻💖 luyện trình code chung với bé nè 💖, lâu lâu có đi đâu chơi 🎡💖 có gì vui thì up lên trang web này 📸💖 chia sẻ cho nhau nha 💖. " +
-          "Hẹn gặp em 💖 trong " +
-          countdownDays() +
-          " ngày nữa! (có thể thay đổi)";
-        document.getElementById("message").style.display = "block";
+
+      function displayEmojiBox() {
+        const box = document.getElementById("emoji-box");
+        box.style.display =
+          box.style.display === "none" || box.style.display === ""
+            ? "block"
+            : "none";
       }
 
-      function displayEmojiBox(){
-        
-      }
-
-      // Đếm ngược
-      function countdownDays() {
-        const meetDate = new Date("2028-08-17");
-        const now = new Date();
-        return Math.ceil((meetDate - now) / (1000 * 60 * 60 * 24));
-      }
+      // // Đếm ngược (bạn có thể bật lại nếu muốn)
+      // function countdownDays() {
+      //   const meetDate = new Date("2028-08-17");
+      //   const now = new Date();
+      //   return Math.ceil((meetDate - now) / (1000 * 60 * 60 * 24));
+      // }
 
       // Nhạc nền
       const music = document.getElementById("bg-music");
@@ -143,60 +257,79 @@
         document.removeEventListener("click", playOnce);
       });
 
+      // Tính số ngày yêu
+      function calculateLoveDays() {
+        const startDate = new Date("2024-03-27");
+        const today = new Date();
+        const diffTime = Math.abs(today - startDate);
+        return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      }
+
+      function animateValue(id, start, end, duration) {
+        const obj = document.getElementById(id);
+        let startTimestamp = null;
+        const step = (timestamp) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+          obj.innerText = Math.floor(progress * (end - start) + start);
+          if (progress < 1) window.requestAnimationFrame(step);
+        };
+        window.requestAnimationFrame(step);
+      }
+
       // ================== CLOUDINARY ==================
       async function uploadToCloudinary(file) {
         const url = "https://api.cloudinary.com/v1_1/dlpy17slx/auto/upload";
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("upload_preset", "LoveDiary"); // tạo preset trong Cloudinary Dashboard
+        formData.append("upload_preset", "LoveDiary");
 
-        const res = await fetch(url, {
-          method: "POST",
-          body: formData,
-        });
+        const res = await fetch(url, { method: "POST", body: formData });
         const data = await res.json();
         return { url: data.secure_url, type: file.type };
       }
 
       // ================== NHẬT KÝ ==================
-      // Load realtime entries
       function loadEntries() {
         db.collection("entries")
           .orderBy("date", "desc")
           .onSnapshot((snapshot) => {
-            const entriesDiv = document.getElementById("entries");
-            if (!entriesDiv) return;
-            entriesDiv.innerHTML = "";
+        const entriesDiv = document.getElementById("entries");
+        if (!entriesDiv) return;
+          entriesDiv.innerHTML = "";
 
-            snapshot.forEach((doc) => {
-              const entry = doc.data();
-              const div = document.createElement("div");
-              div.classList.add("entry");
+          snapshot.forEach((doc) => {
+          const entry = doc.data();
+          const div = document.createElement("div");
+          div.classList.add("timeline-item");
 
-              let content = `<strong>${new Date(entry.date).toLocaleString(
-                "vi-VN"
-              )}</strong><br>`;
+        let content = `<strong>${new Date(entry.date).toLocaleString("vi-VN")}</strong><br>`;
+        if (entry.text) content += `${entry.text}<br>`;
+        if (entry.fileUrl) {
+          if (entry.fileType.startsWith("image/")) {
+            content += `<img src="${entry.fileUrl}" style="max-width:100%; margin-top:10px;">`;
+          } else if (entry.fileType.startsWith("video/")) {
+            content += `<video controls style="max-width:100%; margin-top:10px;">
+                          <source src="${entry.fileUrl}" type="${entry.fileType}">
+                        </video>`;
+          }
+        }
 
-              if (entry.text) {
-                content += `${entry.text}<br>`;
-              }
-              if (entry.fileUrl) {
-                if (entry.fileType.startsWith("image/")) {
-                  content += `<img src="${entry.fileUrl}" style="max-width: 100%; margin-top: 10px;">`;
-                } else if (entry.fileType.startsWith("video/")) {
-                  content += `<video controls style="max-width: 100%; margin-top: 10px;">
-                                <source src="${entry.fileUrl}" type="${entry.fileType}">
-                              </video>`;
-                }
-              }
+        // 👉 thêm nút Edit và Delete
+        content += `
+          <div style="margin-top:10px;">
+            <button onclick="editEntry('${doc.id}', '${entry.text.replace(/'/g,"\\'")}')">✏️</button>
+            <button onclick="deleteEntry('${doc.id}')">🗑️</button>
+          </div>
+        `;
 
-              div.innerHTML = content;
-              entriesDiv.appendChild(div);
-            });
-          });
-      }
+        div.innerHTML = content;
+        entriesDiv.appendChild(div);
+        });
+      });
+    }
 
-      // Thêm nhật ký
+
       async function addEntry() {
         const text = document.getElementById("textInput").value.trim();
         const file = document.getElementById("fileInput").files[0];
@@ -207,9 +340,8 @@
           return;
         }
 
-        let fileUrl = "";
-        let fileType = "";
-
+        let fileUrl = "",
+          fileType = "";
         if (file) {
           const uploaded = await uploadToCloudinary(file);
           fileUrl = uploaded.url;
@@ -227,7 +359,57 @@
         document.getElementById("fileInput").value = "";
       }
 
-      window.onload = loadEntries;
+      async function deleteEntry(id) {
+        if (confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) {
+          await db.collection("entries").doc(id).delete();
+          alert("Đã xóa thành công!");
+        }
+      }
+
+      async function editEntry(id, oldText) {
+        const newText = prompt("Nhập nội dung mới:", oldText);
+        if (newText !== null) {
+          await db.collection("entries").doc(id).update({
+            text: newText
+          });
+        alert("Đã cập nhật thành công!");
+        }
+      }
+
+
+
+      window.onload = () => {
+        loadEntries();
+        const days = calculateLoveDays();
+        animateValue("loveDays", 0, days, 2000);
+      };
+      //animation heart
+      function createFallingHeart() {
+        const heart = document.createElement("div");
+        heart.classList.add("falling-heart");
+        heart.innerText = "❤️";
+
+        // Vị trí ngẫu nhiên ngang màn hình
+        heart.style.left = Math.random() * window.innerWidth + "px";
+
+        // Kích thước ngẫu nhiên
+        const size = Math.random() * 20 + 15;
+        heart.style.fontSize = size + "px";
+
+        // Thời gian rơi ngẫu nhiên
+        const duration = Math.random() * 3 + 4;
+        heart.style.animationDuration = duration + "s";
+
+        document.body.appendChild(heart);
+
+        // Xoá khi kết thúc animation
+        setTimeout(() => {
+          heart.remove();
+        }, duration * 1000);
+      }
+
+      // Tạo tim liên tục mỗi 300ms
+      setInterval(createFallingHeart, 300);
     </script>
   </body>
 </html>
