@@ -36,6 +36,9 @@
         min-height: 60px;
         resize: vertical;
       }
+      #emoji-box {
+        display: none;
+      }
       #entries {
         margin-top: 20px;
         text-align: left;
@@ -74,7 +77,8 @@
 
     <h3>✏️ Viết nhật ký mới</h3>
     <textarea id="textInput" placeholder="Nhập nội dung..."></textarea><br>
-    <center><emoji-picker></emoji-picker></center><br />
+    <button onclick="displayEmojiBox">Emoji</button>
+    <center><emoji-picker id="emoji-box"></emoji-picker></center><br />
     <input type="file" id="fileInput" accept="image/*,video/*" /><br />
     <button onclick="addEntry()">Đăng nhật ký</button>
 
@@ -119,6 +123,10 @@
           countdownDays() +
           " ngày nữa! (có thể thay đổi)";
         document.getElementById("message").style.display = "block";
+      }
+
+      function displayEmojiBox(){
+        
       }
 
       // Đếm ngược
