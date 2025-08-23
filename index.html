@@ -171,7 +171,19 @@
         position: relative;
         animation: popUp 0.7s ease;
       }
-
+      .modal-content-theme {
+        background: #fff0f6;
+        border-radius: 18px;
+        padding: 25px 35px;
+        text-align: center;
+        max-width: 800px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        position: relative;
+        animation: popUp 0.7s ease;
+      }
+      .modal-content-theme h2 {
+        margin: 0 20px;
+      }
       .modal-content p {
         font-size: 22px;
         font-style: italic;
@@ -230,7 +242,44 @@
       .react-btn:hover {
         transform: scale(1.2);
       }
-
+      .icon-btn {
+        font-size: 24px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        border: none;
+        cursor: pointer;
+        background-color: rgba(255, 192, 203, 0.9);
+        transition: transform 0.2s, background-color 0.2s;
+      }
+      .icon-btn:hover {
+        transform: scale(1.2);
+        background-color: rgba(255, 105, 180, 0.8);
+      }
+      .button-group {
+        display: flex;
+        justify-content: center; /* canh giữa cả nhóm */
+        gap: 10px; /* khoảng cách giữa hai nút */
+        margin-top: 5px;
+      }
+      .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: red;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        border: 2px solid white;
+      }
+      .hidden {
+        display: none !important;
+      }
       /* Hiệu ứng */
       @keyframes popUp {
         0% {
@@ -334,13 +383,32 @@
       </div>
     </div>
 
+    <!-- Modal Theme theo tháng-năm -->
+
+    <div id="themeModal" class="modal hidden">
+      <div class="modal-content-theme">
+        <span id="closeThemeModal" class="close">&times;</span>
+        <!-- JS sẽ thay nội dung h2 từ Firebase -->
+        <h2 id="themeTitle">📅 Chủ đề tháng-năm</h2>
+        <p id="themeText"></p>
+        <button onclick="window.location.href='monthly.html'">Trả lời</button>
+      </div>
+    </div>
+
+    <!-- Viết nhật ký mới-->
     <h3>✏️ Viết nhật ký mới</h3>
     <textarea id="textInput" placeholder="Nhập nội dung..."></textarea><br />
-    <input type="date" id="unlockDateInput">
-    <button onclick="displayEmojiBox()">Emoji</button>
+    <div class="button-group">
+      <button onclick="displayEmojiBox()">😊</button>
+      <div style="position: relative; display: inline-block">
+        <button class="icon-btn" id="calendarBtn">💌</button>
+        <span id="notification-badge" class="notification-badge hidden">1</span>
+      </div>
+      <input type="date" id="unlockDateInput">
+      <input type="file" id="fileInput" accept="image/*,video/*" /><br />
+    </div>
     <center><emoji-picker id="emoji-box"></emoji-picker></center>
     <br />
-    <input type="file" id="fileInput" accept="image/*,video/*" /><br />
     <button onclick="addEntry()">Đăng nhật ký</button>
 
     <div id="entries" class="timeline"></div>
@@ -357,6 +425,7 @@
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+    <script src="specialday.js"></script>
     <script>
       // ======= Firebase Config =======
       const firebaseConfig = {
@@ -370,6 +439,7 @@
       };
       firebase.initializeApp(firebaseConfig);
       const db = firebase.firestore();
+      let hasClickedCalendarThisSession = false;
 
       function displayEmojiBox() {
         const box = document.getElementById("emoji-box");
@@ -395,7 +465,7 @@
 
       // Tính số ngày yêu
       function calculateLoveDays() {
-        const startDate = new Date("2024-03-27");
+        const startDate = new Date("2024-03-27T00:00:00");
         const today = new Date();
         const diffTime = Math.abs(today - startDate);
         return Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -427,63 +497,63 @@
 
       // ================== NHẬT KÝ ==================
       function loadEntries() {
-  db.collection("entries")
-    .orderBy("date", "desc")
-    .onSnapshot((snapshot) => {
-      const entriesDiv = document.getElementById("entries");
-      if (!entriesDiv) return;
-      entriesDiv.innerHTML = "";
+        db.collection("entries")
+          .orderBy("date", "desc")
+          .onSnapshot((snapshot) => {
+            const entriesDiv = document.getElementById("entries");
+            if (!entriesDiv) return;
+            entriesDiv.innerHTML = "";
 
-      const now = Date.now();
+            const now = Date.now();
       
 
-      snapshot.forEach((doc) => {
-        const entry = doc.data();
+            snapshot.forEach((doc) => {
+              const entry = doc.data();
 
-        // 👉 kiểm tra ngày mở (unlockDate)
-        if (entry.unlockDate && entry.unlockDate > now) {
-          const lockedDiv = document.createElement("div");
-          lockedDiv.classList.add("timeline-item");
-          lockedDiv.innerHTML = `
-            <strong>${new Date(entry.date).toLocaleString("vi-VN")}</strong><br>
-            <em>🔒 Bài viết sẽ được mở vào: ${new Date(entry.unlockDate).toLocaleDateString("vi-VN")}</em>
-          `;
-          entriesDiv.appendChild(lockedDiv);
-          return; // 👉 chưa mở thì không render nội dung
-        }
+            // 👉 kiểm tra ngày mở (unlockDate)
+            if (entry.unlockDate && entry.unlockDate > now) {
+              const lockedDiv = document.createElement("div");
+              lockedDiv.classList.add("timeline-item");
+              lockedDiv.innerHTML = `
+              <strong>${new Date(entry.date).toLocaleString("vi-VN")}</strong><br>
+              <em>🔒 Bài viết sẽ được mở vào: ${new Date(entry.unlockDate).toLocaleDateString("vi-VN")}</em>
+              `;
+              entriesDiv.appendChild(lockedDiv);
+              return; // 👉 chưa mở thì không render nội dung
+            }
 
-        // 👉 render bài đã mở
-        const div = document.createElement("div");
-        div.classList.add("timeline-item");
+            // 👉 render bài đã mở
+            const div = document.createElement("div");
+            div.classList.add("timeline-item");
 
-        let content = `<strong>${new Date(entry.date).toLocaleString("vi-VN")}</strong><br>`;
-        if (entry.text) content += `${entry.text}<br>`;
-        if (entry.fileUrl) {
-          if (entry.fileType.startsWith("image/")) {
-            content += `<img src="${entry.fileUrl}" style="max-width:100%; margin-top:10px;">`;
-          } else if (entry.fileType.startsWith("video/")) {
-            content += `<video controls style="max-width:100%; margin-top:10px;">
+            let content = `<strong>${new Date(entry.date).toLocaleString("vi-VN")}</strong><br>`;
+              if (entry.text) content += `${entry.text}<br>`;
+              if (entry.fileUrl) {
+              if (entry.fileType.startsWith("image/")) {
+                content += `<img src="${entry.fileUrl}" style="max-width:100%; margin-top:10px;">`;
+              } else if (entry.fileType.startsWith("video/")) {
+                content += `<video controls style="max-width:100%; margin-top:10px;">
                           <source src="${entry.fileUrl}" type="${entry.fileType}">
                         </video>`;
-          }
-        }
+              }
+            }
 
-        // 👉 thêm nút Edit và Delete
-        content += `
-          <div style="margin-top:10px;">
+            // 👉 thêm nút Edit và Delete
+            content += `
+            <div style="margin-top:10px;">
             <button onclick="editEntry('${doc.id}', '${entry.text ? entry.text.replace(/'/g,"\\'") : ""}')">✏️</button>
             <button onclick="deleteEntry('${doc.id}')">🗑️</button>
-          </div>
-        `;
+            </div>
+        `   ;
 
-        div.innerHTML = content;
-        entriesDiv.appendChild(div);
+            div.innerHTML = content;
+            entriesDiv.appendChild(div);
 
-        // 👉 render reactions nếu có
-        renderReactions(div, doc.id, entry.reactions || {});
-      });
-    });
-}
+            // 👉 render reactions nếu có
+            renderReactions(div, doc.id, entry.reactions || {});
+          });
+        });
+      }
 
 
       async function addEntry() {
@@ -544,6 +614,8 @@
         const days = calculateLoveDays();
         animateValue("loveDays", 0, days, 2000);
         showQuoteOfTheDay();
+        applyThemeForToday();
+        checkForNewTheme();
       };
 
       //================= animation heart ============
@@ -699,6 +771,137 @@
         });
 
         entryDiv.appendChild(reactionsDiv);
+      }
+      //================THEME========================
+      function applyThemeForToday() {
+        const today = new Date();
+        const month = today.getMonth() + 1;
+        const day = today.getDate();
+
+        const special = specialDays.find(
+          (d) => d.month === month && d.day === day
+        );
+        if (!special) return;
+
+        // Background và màu chữ
+        document.body.style.background = special.theme.background;
+        document.body.style.color = special.theme.textColor;
+
+        // Bật animation trái tim hoặc emoji rơi nếu có
+        if (special.theme.heartAnimation) {
+          setInterval(
+            () => createFallingHeart(special.theme.fallingEmoji),
+            300
+          );
+        }
+      }
+
+      // Thay đổi createFallingHeart để nhận emoji tùy chọn
+      function createFallingHeart(emojis = ["❤️"]) {
+        const heart = document.createElement("div");
+        heart.classList.add("falling-heart");
+        heart.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+
+        heart.style.left = Math.random() * window.innerWidth + "px";
+        const size = Math.random() * 20 + 15;
+        heart.style.fontSize = size + "px";
+        const duration = Math.random() * 3 + 4;
+        heart.style.animationDuration = duration + "s";
+
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), duration * 1000);
+      }
+      //========================Minigame==============================
+      const calendarBtn = document.getElementById("calendarBtn");
+      const themeModal = document.getElementById("themeModal");
+      const closeThemeModal = document.getElementById("closeThemeModal");
+      const themeText = document.getElementById("themeText");
+
+      // Khi click nút lịch
+
+      calendarBtn.onclick = async () => {
+        const today = new Date();
+
+        const month = today.getMonth() + 1;
+        const year = today.getFullYear();
+        const themeKey = `theme-${year}-${month}`; // Dùng cùng key với hàm trên
+
+        try {
+          const snapshot = await db
+            .collection("monthlyThemes")
+            .where("month", "==", month)
+            .where("year", "==", year)
+            .get();
+
+          if (!snapshot.empty) {
+            const data = snapshot.docs[0].data();
+            document.querySelector("#themeModal h2").textContent = data.title;
+            themeText.textContent = data.content;
+          } else {
+            document.querySelector("#themeModal h2").textContent =
+              "Chủ đề theo tháng";
+            themeText.textContent = "Chưa có chủ đề cho tháng này ";
+          }
+
+          themeModal.classList.remove("hidden");
+
+          // 1. Ẩn huy hiệu
+          document.getElementById("notification-badge").classList.add("hidden");
+
+          // 2. CẬP NHẬT FIRESTORE: Thêm key của chủ đề này vào mảng seenThemes
+          const userStateRef = db.collection("userState").doc("mainUser");
+          await userStateRef.update({
+            seenThemes: firebase.firestore.FieldValue.arrayUnion(themeKey),
+          });
+        } catch (err) {
+          console.error("Lỗi khi lấy chủ đề:", err);
+          alert("Không tải được chủ đề ");
+        }
+      };
+
+      // Nút đóng modal
+      closeThemeModal.onclick = () => {
+        themeModal.classList.add("hidden");
+      };
+
+      async function checkForNewTheme() {
+        const badge = document.getElementById("notification-badge");
+        const today = new Date();
+
+        const month = today.getMonth() + 1;
+        const year = today.getFullYear();
+        const themeKey = `theme-${year}-${month}`; // Key để định danh chủ đề
+
+        try {
+          // 1. Lấy trạng thái của người dùng từ Firestore
+          const userStateRef = db.collection("userState").doc("mainUser");
+          const userStateDoc = await userStateRef.get();
+
+          let seenThemes = [];
+          if (userStateDoc.exists) {
+            seenThemes = userStateDoc.data().seenThemes || [];
+          }
+
+          // 2. Nếu chủ đề này đã có trong danh sách "đã xem" -> không làm gì cả
+          if (seenThemes.includes(themeKey)) {
+            return;
+          }
+
+          // 3. Nếu chưa xem, kiểm tra xem chủ đề có tồn tại không
+          const themeSnapshot = await db
+            .collection("monthlyThemes")
+            .where("month", "==", month)
+            .where("year", "==", year)
+            .limit(1)
+            .get();
+
+          // 4. Nếu có chủ đề mới và chưa xem -> hiển thị thông báo
+          if (!themeSnapshot.empty) {
+            badge.classList.remove("hidden");
+          }
+        } catch (error) {
+          console.error("Lỗi khi kiểm tra chủ đề mới:", error);
+        }
       }
     </script>
   </body>

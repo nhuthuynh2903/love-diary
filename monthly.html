@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Nhật Ký Tình Yêu</title>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"
+    ></script>
+
+    <style>
+      body {
+        text-align: center;
+        background: url("background.png") no-repeat center center/cover;
+        color: rgb(155, 124, 124);
+        font-family: "Segoe UI", sans-serif;
+      }
+      h1 {
+        font-size: 3em;
+        margin-top: 20px;
+        animation: fadeIn 3s ease-in-out;
+      }
+      h2 {
+        margin-top: 5px;
+      }
+      button,
+      input,
+      textarea {
+        font-size: 1em;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        margin-top: 5px;
+      }
+      button {
+        background-color: rgba(255, 192, 203, 0.925);
+        cursor: pointer;
+      }
+      textarea {
+        width: 90%;
+        min-height: 60px;
+        resize: vertical;
+      }
+      #emoji-box {
+        display: none;
+      }
+      #entries {
+        margin-top: 20px;
+        text-align: left;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 15px;
+        border-radius: 10px;
+      }
+      .heart {
+        width: 200px;
+        height: 200px;
+        margin: 40px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        animation: heartbeat 1s infinite;
+      }
+      .heart svg {
+        width: 100%;
+        height: 100%;
+      }
+      .heart svg path {
+        animation: heartbeatColor 1s infinite;
+      }
+      .number-wrapper {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .number {
+        font-size: 36px;
+        font-weight: bold;
+        color: #b22222;
+      }
+      .label {
+        font-size: 16px;
+        font-weight: bold;
+        color: #b22222;
+        margin-top: 4px;
+      }
+
+      .falling-heart {
+        position: fixed;
+        top: -20px;
+        color: pink;
+        animation: fall linear forwards;
+        z-index: 9999;
+      }
+
+      .timeline {
+        position: relative;
+        margin: 20px auto;
+        padding: 10px 0;
+        max-width: 600px;
+        text-align: left;
+      }
+
+      .timeline::after {
+        content: "";
+        position: absolute;
+        width: 5px;
+        background-color: #ccc;
+        top: 10px;
+        bottom: 10px;
+        left: 21px;
+      }
+
+      .timeline-item {
+        padding: 20px 20px 20px 60px;
+        position: relative;
+        border-left: none;
+        margin: 0px 0;
+      }
+      .timeline-item.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .timeline-item::before {
+        content: "";
+        position: absolute;
+        top: 22px;
+        left: 0px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: pink;
+        border: 2px solid #fff;
+        z-index: 1;
+      }
+      .love-letter {
+        position: fixed;
+        top: -60px;
+        font-size: 60px;
+        z-index: 10000;
+        animation: letterFall linear forwards;
+        text-shadow: 0 0 10px pink, 0 0 20px hotpink, 0 0 30px red;
+      }
+
+      /* Hiệu ứng */
+      @keyframes popUp {
+        0% {
+          transform: scale(0.7);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      @keyframes fall {
+        to {
+          transform: translateY(100vh);
+          opacity: 0;
+        }
+      }
+      @keyframes letterFall {
+        0% {
+          transform: translateX(0) translateY(0) rotate(0deg);
+          opacity: 1;
+        }
+        25% {
+          transform: translateX(-30px) translateY(25vh) rotate(90deg);
+        }
+        50% {
+          transform: translateX(30px) translateY(50vh) rotate(180deg);
+        }
+        75% {
+          transform: translateX(-30px) translateY(75vh) rotate(270deg);
+        }
+        100% {
+          transform: translateX(0) translateY(100vh) rotate(360deg);
+          opacity: 0;
+        }
+      }
+      @keyframes heartbeat {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        25% {
+          transform: scale(1.1);
+        }
+        50% {
+          transform: scale(0.95);
+        }
+        75% {
+          transform: scale(1.05);
+        }
+      }
+      @keyframes heartbeatColor {
+        0%,
+        100% {
+          fill: rgb(255, 192, 203);
+        }
+        50% {
+          fill: rgb(247, 170, 182);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- <audio id="bg-music" loop>
+      <source src="I Do.mp3" type="audio/mpeg" />
+    </audio> -->
+
+    <h1>🎉 Nhứt Huỳnh & Bảo Ngọc 🎉</h1>
+    <h2>📖 Nhật Ký Anh & Bé 📖</h2>
+
+    <!-- Đếm ngày yêu -->
+    <div class="heart">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+             2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09
+             C13.09 3.81 14.76 3 16.5 3 
+             19.58 3 22 5.42 22 8.5
+             c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+          fill="pink"
+        />
+      </svg>
+      <div class="number-wrapper">
+        <div class="number" id="loveDays">0</div>
+        <div class="label">DAYS</div>
+      </div>
+    </div>
+
+    <div id="entries" class="timeline"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+    <script src="specialday.js"></script>
+    <script>
+      // ======= Firebase Config =======
+      const firebaseConfig = {
+        apiKey: "AIzaSyBsumPv8_hk16RcR-mwrx4UVbt8XMzi_2c",
+        authDomain: "love-diary-69c00.firebaseapp.com",
+        projectId: "love-diary-69c00",
+        storageBucket: "love-diary-69c00.appspot.com",
+        messagingSenderId: "299225297515",
+        appId: "1:299225297515:web:dda7bcb35a0c8ae95af72e",
+        measurementId: "G-213TXQLVFX",
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+      //============================EMOJI==========================
+      function displayEmojiBox(entryId) {
+        // Tìm đến emoji-box tương ứng với entryId
+        const emojiBox = document.getElementById(`emoji-box-${entryId}`);
+        if (emojiBox) {
+          emojiBox.style.display =
+            emojiBox.style.display === "none" || emojiBox.style.display === ""
+              ? "block"
+              : "none";
+        }
+      }
+
+      // Nhạc nền
+      const music = document.getElementById("bg-music");
+      document.addEventListener("click", function playOnce() {
+        music.play();
+        document.removeEventListener("click", playOnce);
+      });
+
+      // Tính số ngày yêu
+      function calculateLoveDays() {
+        const startDate = new Date("2024-03-27T00:00:00");
+        const today = new Date();
+        const diffTime = Math.abs(today - startDate);
+        return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      }
+
+      function animateValue(id, start, end, duration) {
+        const obj = document.getElementById(id);
+        let startTimestamp = null;
+        const step = (timestamp) => {
+          if (!startTimestamp) startTimestamp = timestamp;
+          const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+          obj.innerText = Math.floor(progress * (end - start) + start);
+          if (progress < 1) window.requestAnimationFrame(step);
+        };
+        window.requestAnimationFrame(step);
+      }
+
+      // ================== CLOUDINARY ==================
+      async function uploadToCloudinary(file) {
+        const url = "https://api.cloudinary.com/v1_1/dlpy17slx/auto/upload";
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "LoveDiary");
+
+        const res = await fetch(url, { method: "POST", body: formData });
+        const data = await res.json();
+        return { url: data.secure_url, type: file.type };
+      }
+
+      // ================== CÂU TL THEO THÁNG ==================
+      function loadEntries() {
+        // === BƯỚC 1: GIẢ MẠO NGÀY THÁNG ĐỂ TEST ===
+        const today = new Date(); // Tạm thời vô hiệu hóa dòng này
+        
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth() + 1; 
+
+        // Sắp xếp để tháng mới nhất luôn ở trên cùng
+        db.collection("monthlyThemes")
+          
+          .onSnapshot(async (snapshot) => {
+            const entriesDiv = document.getElementById("entries");
+            if (!entriesDiv) return;
+            entriesDiv.innerHTML = "";
+
+            if (snapshot.empty) {
+              entriesDiv.innerHTML =
+                "<p style='text-align: center;'>Chưa có chủ đề nào được tạo.</p>";
+              return;
+            }
+
+            for (const doc of snapshot.docs) {
+              const entry = doc.data();
+
+              // === BƯỚC 2: THÊM LẠI BỘ LỌC ĐỂ ẨN CÁC THÁNG TƯƠNG LAI ===
+              // Logic này sẽ ẩn đi tháng 10 (vì 10 > 9)
+              if (
+                entry.year > currentYear ||
+                (entry.year === currentYear && entry.month > currentMonth)
+              ) {
+                continue; // Bỏ qua và không hiển thị
+              }
+
+              const div = document.createElement("div");
+              div.classList.add("timeline-item");
+              div.id = doc.id;
+
+              let content = `<strong>${entry.title} (${entry.month}/${entry.year})</strong><br>`;
+              content += `${entry.content}<br>`;
+
+              let replySectionHtml = "";
+
+              // KIỂM TRA: So sánh với tháng 9 (currentMonth = 9)
+              if (entry.year === currentYear && entry.month === currentMonth) {
+                // Khi gặp chủ đề tháng 9, điều kiện này sẽ ĐÚNG
+                replySectionHtml = `
+                  <div style="margin-top:10px; display: flex; align-items: center;">
+                      <input type="text" id="replyInput-${doc.id}" placeholder="Viết phản hồi..." style="width:70%; margin-right: 5px;">
+                      <button onclick="addReply('${doc.id}')">💬</button>
+                      <button onclick="displayEmojiBox('${doc.id}')" style="margin-left: 5px;">😊</button>
+                  </div>
+                  <center>
+                      <emoji-picker id="emoji-box-${doc.id}" style="display: none;"></emoji-picker>
+                  </center>
+                `;
+              } else {
+                // Khi gặp chủ đề tháng 8, điều kiện này sẽ SAI
+                replySectionHtml = `
+                  <div style="margin-top:10px; padding: 10px; background-color: #f0f0f0; border-radius: 8px; color: #888; font-style: italic;">
+                      Chủ đề tháng này đã kết thúc.
+                  </div>
+                `;
+              }
+
+              content += replySectionHtml;
+              content += `<div id="replies-${doc.id}" style="margin-left:20px; margin-top:10px;"></div>`;
+
+              div.innerHTML = content;
+              entriesDiv.appendChild(div);
+
+              loadReplies(doc.id);
+            }
+          });
+      }
+      //=================REPLY================
+      async function addReply(entryId) {
+        const input = document.getElementById(`replyInput-${entryId}`);
+        const text = input.value.trim();
+        if (!text) return alert("Vui lòng nhập nội dung trả lời!");
+
+        await db
+          .collection("monthlyThemes")
+          .doc(entryId)
+          .collection("replies")
+          .add({
+            text: text,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+
+        input.value = "";
+        // 💌 Gọi hiệu ứng rơi nhiều lá thư
+        for (let i = 0; i < 5; i++) {
+          setTimeout(dropLetter, i * 300);
+        }
+      }
+
+      function loadReplies(entryId) {
+        db.collection("monthlyThemes")
+          .doc(entryId)
+          .collection("replies")
+          .orderBy("createdAt", "asc")
+          .onSnapshot((snapshot) => {
+            const repliesDiv = document.getElementById(`replies-${entryId}`);
+            repliesDiv.innerHTML = "";
+            snapshot.forEach((doc) => {
+              const reply = doc.data();
+              const p = document.createElement("p");
+              p.style.background = "#f8f8f8";
+              p.style.padding = "5px 10px";
+              p.style.borderRadius = "6px";
+              p.style.marginBottom = "5px";
+              p.innerText = "↪ " + reply.text;
+              repliesDiv.appendChild(p);
+            });
+          });
+      }
+
+      window.onload = () => {
+        loadEntries();
+        const days = calculateLoveDays();
+        animateValue("loveDays", 0, days, 2000);
+        applyThemeForToday();
+
+        const entriesDiv = document.getElementById("entries");
+
+        // Lắng nghe sự kiện 'emoji-click' trên toàn bộ khu vực entries
+        entriesDiv.addEventListener("emoji-click", (event) => {
+          // Lấy emoji được chọn
+          const emoji = event.detail.unicode;
+
+          // Tìm 'timeline-item' cha gần nhất của emoji-picker được click
+          const timelineItem = event.target.closest(".timeline-item");
+
+          if (timelineItem) {
+            // Lấy ID của timeline-item (chính là entryId)
+            const entryId = timelineItem.id;
+
+            // Tìm input tương ứng
+            const input = document.getElementById(`replyInput-${entryId}`);
+
+            if (input) {
+              // Thêm emoji vào input
+              input.value += emoji;
+            }
+
+            // Ẩn emoji picker sau khi chọn xong
+            event.target.style.display = "none";
+          }
+        });
+      };
+
+      //================= animation heart ============
+      function createFallingHeart() {
+        const heart = document.createElement("div");
+        heart.classList.add("falling-heart");
+        heart.innerText = "❤️";
+
+        // Vị trí ngẫu nhiên ngang màn hình
+        heart.style.left = Math.random() * window.innerWidth + "px";
+
+        // Kích thước ngẫu nhiên
+        const size = Math.random() * 20 + 15;
+        heart.style.fontSize = size + "px";
+
+        // Thời gian rơi ngẫu nhiên
+        const duration = Math.random() * 3 + 4;
+        heart.style.animationDuration = duration + "s";
+
+        document.body.appendChild(heart);
+
+        // Xoá khi kết thúc animation
+        setTimeout(() => {
+          heart.remove();
+        }, duration * 1000);
+      }
+
+      // Tạo tim liên tục mỗi 300ms
+      setInterval(createFallingHeart, 300);
+
+      //=========== Animation button upload -> lá thư ==================
+      function dropLetter() {
+        const letter = document.createElement("div");
+        letter.classList.add("love-letter");
+        letter.textContent = "💌";
+
+        // vị trí ngẫu nhiên
+        letter.style.left = Math.random() * window.innerWidth + "px";
+
+        // kích thước ngẫu nhiên
+        const size = Math.random() * 15 + 25;
+        letter.style.fontSize = size + "px";
+
+        // thời gian rơi ngẫu nhiên
+        const duration = Math.random() * 2 + 3; // 3s - 5s
+        letter.style.animationDuration = duration + "s";
+
+        document.body.appendChild(letter);
+
+        setTimeout(() => {
+          letter.remove();
+        }, duration * 1000);
+      }
+
+      //  Tạo mưa thư tình
+      function dropManyLetters() {
+        let count = 0;
+        let interval = setInterval(() => {
+          dropLetter();
+          count++;
+          if (count >= 30) {
+            // tổng số lá thư muốn rơi
+            clearInterval(interval);
+          }
+        }, 150);
+      }
+      // ===== Observer để tạo hiệu ứng xuất hiện mượt =====
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("show");
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.2 }
+      );
+      //======================THEME========================
+      function applyThemeForToday() {
+        const today = new Date();
+        const month = today.getMonth() + 1;
+        const day = today.getDate();
+
+        const special = specialDays.find(
+          (d) => d.month === month && d.day === day
+        );
+        if (!special) return;
+
+        // Background và màu chữ
+        document.body.style.background = special.theme.background;
+        document.body.style.color = special.theme.textColor;
+
+        // Bật animation trái tim hoặc emoji rơi nếu có
+        if (special.theme.heartAnimation) {
+          setInterval(
+            () => createFallingHeart(special.theme.fallingEmoji),
+            300
+          );
+        }
+      }
+
+      // Thay đổi createFallingHeart để nhận emoji tùy chọn
+      function createFallingHeart(emojis = ["❤️"]) {
+        const heart = document.createElement("div");
+        heart.classList.add("falling-heart");
+        heart.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+
+        heart.style.left = Math.random() * window.innerWidth + "px";
+        const size = Math.random() * 20 + 15;
+        heart.style.fontSize = size + "px";
+        const duration = Math.random() * 3 + 4;
+        heart.style.animationDuration = duration + "s";
+
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), duration * 1000);
+      }
+    </script>
+  </body>
+</html>
