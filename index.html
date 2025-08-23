@@ -117,6 +117,10 @@
         border-left: none;
         margin: 0px 0;
       }
+      .timeline-item.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
 
       .timeline-item::before {
         content: "";
@@ -130,14 +134,139 @@
         border: 2px solid #fff;
         z-index: 1;
       }
+      .love-letter {
+        position: fixed;
+        top: -60px;
+        font-size: 60px;
+        z-index: 10000;
+        animation: letterFall linear forwards;
+        text-shadow: 0 0 10px pink, 0 0 20px hotpink, 0 0 30px red;
+      }
+      /* Modal nền mờ */
+      .modal {
+        position: fixed;
+        z-index: 10000;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 182, 193, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.6s;
+      }
+      .hidden {
+        display: none;
+      }
 
+      /* Nội dung modal */
+      .modal-content {
+        background: #fff0f6;
+        border-radius: 18px;
+        padding: 25px 35px;
+        text-align: center;
+        max-width: 500px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        position: relative;
+        animation: popUp 0.7s ease;
+      }
+
+      .modal-content p {
+        font-size: 22px;
+        font-style: italic;
+        color: #b22222;
+        margin-top: 15px;
+        line-height: 1.5;
+      }
+
+      #quoteText {
+        display: inline-block;
+        max-width: 90%;
+        word-wrap: break-word;
+        text-align: center;
+      }
+
+       #quoteText::after {
+        content: " 💕";
+        font-size: 24px;
+        color: #ff4d6d;
+        animation: heartbeat 1.5s infinite;
+      }
+
+      /* Nút đóng */
+      .close {
+        position: absolute;
+        top: 12px;
+        right: 18px;
+        font-size: 30px;
+        font-weight: bold;
+        color: #d63384;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .close:hover {
+        transform: scale(1.2);
+      }
+      .reactions {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+      }
+
+      .react-btn {
+        background: #ffe0e6;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: transform 0.2s;
+      }
+
+      .react-btn:hover {
+        transform: scale(1.2);
+      }
+
+      /* Hiệu ứng */
+      @keyframes popUp {
+        0% {
+          transform: scale(0.7);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
       @keyframes fall {
         to {
           transform: translateY(100vh);
           opacity: 0;
         }
       }
-
+      @keyframes letterFall {
+        0% {
+          transform: translateX(0) translateY(0) rotate(0deg);
+          opacity: 1;
+        }
+        25% {
+          transform: translateX(-30px) translateY(25vh) rotate(90deg);
+        }
+        50% {
+          transform: translateX(30px) translateY(50vh) rotate(180deg);
+        }
+        75% {
+          transform: translateX(-30px) translateY(75vh) rotate(270deg);
+        }
+        100% {
+          transform: translateX(0) translateY(100vh) rotate(360deg);
+          opacity: 0;
+        }
+      }
       @keyframes heartbeat {
         0%,
         100% {
@@ -197,9 +326,17 @@
         <div class="label">DAYS</div>
       </div>
     </div>
+    <!-- Modal Quote -->
+    <div id="quoteModal" class="modal hidden">
+      <div class="modal-content">
+        <span id="closeModal" class="close">&times;</span>
+        <p id="quoteText"></p>
+      </div>
+    </div>
 
     <h3>✏️ Viết nhật ký mới</h3>
     <textarea id="textInput" placeholder="Nhập nội dung..."></textarea><br />
+    <input type="date" id="unlockDateInput">
     <button onclick="displayEmojiBox()">Emoji</button>
     <center><emoji-picker id="emoji-box"></emoji-picker></center>
     <br />
@@ -233,7 +370,6 @@
       };
       firebase.initializeApp(firebaseConfig);
       const db = firebase.firestore();
-
 
       function displayEmojiBox() {
         const box = document.getElementById("emoji-box");
@@ -291,17 +427,34 @@
 
       // ================== NHẬT KÝ ==================
       function loadEntries() {
-        db.collection("entries")
-          .orderBy("date", "desc")
-          .onSnapshot((snapshot) => {
-        const entriesDiv = document.getElementById("entries");
-        if (!entriesDiv) return;
-          entriesDiv.innerHTML = "";
+  db.collection("entries")
+    .orderBy("date", "desc")
+    .onSnapshot((snapshot) => {
+      const entriesDiv = document.getElementById("entries");
+      if (!entriesDiv) return;
+      entriesDiv.innerHTML = "";
 
-          snapshot.forEach((doc) => {
-          const entry = doc.data();
-          const div = document.createElement("div");
-          div.classList.add("timeline-item");
+      const now = Date.now();
+      
+
+      snapshot.forEach((doc) => {
+        const entry = doc.data();
+
+        // 👉 kiểm tra ngày mở (unlockDate)
+        if (entry.unlockDate && entry.unlockDate > now) {
+          const lockedDiv = document.createElement("div");
+          lockedDiv.classList.add("timeline-item");
+          lockedDiv.innerHTML = `
+            <strong>${new Date(entry.date).toLocaleString("vi-VN")}</strong><br>
+            <em>🔒 Bài viết sẽ được mở vào: ${new Date(entry.unlockDate).toLocaleDateString("vi-VN")}</em>
+          `;
+          entriesDiv.appendChild(lockedDiv);
+          return; // 👉 chưa mở thì không render nội dung
+        }
+
+        // 👉 render bài đã mở
+        const div = document.createElement("div");
+        div.classList.add("timeline-item");
 
         let content = `<strong>${new Date(entry.date).toLocaleString("vi-VN")}</strong><br>`;
         if (entry.text) content += `${entry.text}<br>`;
@@ -318,23 +471,27 @@
         // 👉 thêm nút Edit và Delete
         content += `
           <div style="margin-top:10px;">
-            <button onclick="editEntry('${doc.id}', '${entry.text.replace(/'/g,"\\'")}')">✏️</button>
-            
+            <button onclick="editEntry('${doc.id}', '${entry.text ? entry.text.replace(/'/g,"\\'") : ""}')">✏️</button>
+            <button onclick="deleteEntry('${doc.id}')">🗑️</button>
           </div>
         `;
-//<button onclick="deleteEntry('${doc.id}')">🗑️</button> đặt lại ở trong div
+
         div.innerHTML = content;
         entriesDiv.appendChild(div);
-        });
+
+        // 👉 render reactions nếu có
+        renderReactions(div, doc.id, entry.reactions || {});
       });
-    }
+    });
+}
 
 
       async function addEntry() {
         const text = document.getElementById("textInput").value.trim();
         const file = document.getElementById("fileInput").files[0];
         const dateNow = Date.now();
-
+        const unlockDateInput = document.getElementById("unlockDateInput").value;
+        const unlockDate = unlockDateInput ? new Date(unlockDateInput).getTime() : Date.now();
         if (!text && !file) {
           alert("Vui lòng nhập nội dung hoặc chọn file!");
           return;
@@ -353,10 +510,16 @@
           fileUrl: fileUrl || "",
           fileType: fileType || "",
           date: dateNow,
+          unlockDate: unlockDate,
         });
 
         document.getElementById("textInput").value = "";
         document.getElementById("fileInput").value = "";
+
+        // 💌 Gọi hiệu ứng rơi nhiều lá thư
+        for (let i = 0; i < 5; i++) {
+          setTimeout(dropLetter, i * 300);
+        }
       }
 
       /*async function deleteEntry(id) {
@@ -370,20 +533,20 @@
         const newText = prompt("Nhập nội dung mới:", oldText);
         if (newText !== null) {
           await db.collection("entries").doc(id).update({
-            text: newText
+            text: newText,
           });
-        alert("Đã cập nhật thành công!");
+          alert("Đã cập nhật thành công!");
         }
       }
-
-
 
       window.onload = () => {
         loadEntries();
         const days = calculateLoveDays();
         animateValue("loveDays", 0, days, 2000);
+        showQuoteOfTheDay();
       };
-      //animation heart
+
+      //================= animation heart ============
       function createFallingHeart() {
         const heart = document.createElement("div");
         heart.classList.add("falling-heart");
@@ -410,6 +573,133 @@
 
       // Tạo tim liên tục mỗi 300ms
       setInterval(createFallingHeart, 300);
+
+      // =========== QUOTE MỖI NGÀY  ==========
+      async function showQuoteOfTheDay() {
+        try {
+          // 1. Lấy tất cả quotes từ Firestore
+          const quotesSnapshot = await db.collection("quotes").get();
+          const quotes = [];
+          quotesSnapshot.forEach((doc) => quotes.push(doc.data().text));
+
+          if (quotes.length === 0) {
+            alert("Chưa có quote nào 💌");
+            return;
+          }
+
+          // 2. Tính số ngày & số tuần từ Epoch
+          const today = new Date();
+          const daysSinceEpoch = Math.floor(
+            today.getTime() / (1000 * 60 * 60 * 24)
+          );
+          const weekNumber = Math.floor(daysSinceEpoch / 7);
+          const dayOfWeek = today.getDay();
+
+          // 3. Sinh số "ngẫu nhiên ổn định" dựa trên tuần + ngày
+          function seededRandom(seed) {
+            let x = Math.sin(seed) * 10000;
+            return x - Math.floor(x);
+          }
+
+          const seed = weekNumber * 7 + dayOfWeek;
+          const index = Math.floor(seededRandom(seed) * quotes.length);
+
+          const chosen = quotes[index];
+
+          // 4. Hiển thị
+          openQuoteModal(chosen);
+        } catch (error) {
+          console.error("Lỗi khi load quote:", error);
+          alert("Không tải được quote 😢");
+        }
+      }
+      function openQuoteModal(text) {
+        document.getElementById("quoteText").textContent = text;
+        document.getElementById("quoteModal").classList.remove("hidden");
+      }
+      function closeQuoteModal() {
+        document.getElementById("quoteModal").classList.add("hidden");
+      }
+      document.getElementById("closeModal").onclick = closeQuoteModal;
+      window.onclick = (e) => {
+        if (e.target === document.getElementById("quoteModal")) {
+          closeQuoteModal();
+        }
+      };
+      //=========== Animation button upload -> lá thư ==================
+      function dropLetter() {
+        const letter = document.createElement("div");
+        letter.classList.add("love-letter");
+        letter.textContent = "💌";
+
+        // vị trí ngẫu nhiên
+        letter.style.left = Math.random() * window.innerWidth + "px";
+
+        // kích thước ngẫu nhiên
+        const size = Math.random() * 15 + 25;
+        letter.style.fontSize = size + "px";
+
+        // thời gian rơi ngẫu nhiên
+        const duration = Math.random() * 2 + 3; // 3s - 5s
+        letter.style.animationDuration = duration + "s";
+
+        document.body.appendChild(letter);
+
+        setTimeout(() => {
+          letter.remove();
+        }, duration * 1000);
+      }
+
+      //  Tạo mưa thư tình
+      function dropManyLetters() {
+        let count = 0;
+        let interval = setInterval(() => {
+          dropLetter();
+          count++;
+          if (count >= 30) {
+            // tổng số lá thư muốn rơi
+            clearInterval(interval);
+          }
+        }, 150);
+      }
+      // ===== Observer để tạo hiệu ứng xuất hiện mượt =====
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("show");
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.2 }
+      );
+      //================Reaction=================
+      function renderReactions(entryDiv, entryId, reactions) {
+        const reactionsDiv = document.createElement("div");
+        reactionsDiv.classList.add("reactions");
+
+        ["❤️", "😂", "😘", "🥹", "😠", "😆", "😒", "😮"].forEach((emoji) => {
+          const btn = document.createElement("button");
+          btn.classList.add("react-btn");
+          btn.dataset.type = emoji;
+          btn.innerHTML = `${emoji} <span class="count">${
+            reactions[emoji] || 0
+          }</span>`;
+
+          btn.addEventListener("click", async () => {
+            const entryRef = db.collection("entries").doc(entryId);
+            const docSnap = await entryRef.get();
+            const currentReactions = docSnap.data().reactions || {};
+            currentReactions[emoji] = (currentReactions[emoji] || 0) + 1;
+            await entryRef.update({ reactions: currentReactions });
+          });
+
+          reactionsDiv.appendChild(btn);
+        });
+
+        entryDiv.appendChild(reactionsDiv);
+      }
     </script>
   </body>
 </html>
