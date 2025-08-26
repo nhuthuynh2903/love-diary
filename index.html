@@ -404,6 +404,10 @@
         <button class="icon-btn" id="calendarBtn">💌</button>
         <span id="notification-badge" class="notification-badge hidden">1</span>
       </div>
+      
+      <div style="position: relative; display: inline-block">
+        <button class="icon-btn" id="gameBtn" onclick="goToPet()">🎮</button>
+      </div>
       <input type="date" id="unlockDateInput">
       <input type="file" id="fileInput" accept="image/*,video/*" /><br />
     </div>
@@ -465,8 +469,9 @@
 
       // Tính số ngày yêu
       function calculateLoveDays() {
-        const startDate = new Date("2024-03-27T00:00:00");
+        const startDate = new Date("2024-03-27T00:00:00+07:00");
         const today = new Date();
+        console.log(today);
         const diffTime = Math.abs(today - startDate);
         return Math.floor(diffTime / (1000 * 60 * 60 * 24));
       }
@@ -561,7 +566,13 @@
         const file = document.getElementById("fileInput").files[0];
         const dateNow = Date.now();
         const unlockDateInput = document.getElementById("unlockDateInput").value;
-        const unlockDate = unlockDateInput ? new Date(unlockDateInput).getTime() : Date.now();
+        let unlockDate = Date.now();
+
+        if (unlockDateInput) {
+          const [year, month, day] = unlockDateInput.split("-").map(Number);
+          const localDate = new Date(year, month - 1, day, 0, 0, 0);
+          unlockDate = localDate.getTime();
+        }
         if (!text && !file) {
           alert("Vui lòng nhập nội dung hoặc chọn file!");
           return;
@@ -902,6 +913,11 @@
         } catch (error) {
           console.error("Lỗi khi kiểm tra chủ đề mới:", error);
         }
+      }
+
+      // ============ Game ===========
+      function goToPet() {
+        window.location.href = "pet.html"; // chuyển sang pet.html
       }
     </script>
   </body>

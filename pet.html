@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Game Nuôi Thú Ảo</title>
+    <!-- THAY ĐỔI 1: THÊM THƯ VIỆN PHÁO HOA -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .app {
+        width: 900px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        position: relative; /* Cần thiết cho pháo hoa */
+        overflow: hidden; /* Cần thiết cho pháo hoa */
+      }
+      h1 {
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        margin-top: 0;
+        margin-bottom: 25px;
+      }
+      .container {
+        display: flex;
+        gap: 20px;
+      }
+
+      .pet-column {
+        flex: 1.2;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .pet-stage {
+        position: relative;
+        width: 100%;
+        height: 120px;
+        margin-bottom: 10px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .pet-display {
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        width: 120px;
+        height: 120px;
+        transform: translateX(-50%);
+        transition: left 2s ease-in-out;
+      }
+
+      #petImage {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        cursor: pointer;
+        transition: transform 0.5s;
+      }
+
+      #petImage:active {
+        transform: var(--transform-direction, scaleX(1)) scale(0.95);
+      }
+
+      #petName {
+        font-size: 20px;
+        font-weight: bold;
+      }
+      #petMood {
+        font-style: italic;
+        color: #a3e635; /* Màu mặc định */
+        margin-top: -15px;
+        margin-bottom: 15px;
+        min-height: 20px;
+        transition: color 0.5s; /* Thêm hiệu ứng chuyển màu */
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin: 15px 0;
+      }
+      .stat {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 14px;
+        text-align: left;
+      }
+      .actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      .game-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .panel {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 15px;
+        padding: 20px;
+      }
+      .panel-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+      .panel-group input {
+        flex: 1;
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: none;
+        outline: none;
+        background: #0f3460;
+        color: #fff;
+      }
+      .log {
+        height: 150px;
+        overflow-y: auto;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 14px;
+        margin-top: 10px;
+      }
+      .log p {
+        margin: 5px 0;
+      }
+      .game-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+      #levelDisplay {
+        font-weight: bold;
+        font-size: 18px;
+      }
+      #coinDisplay {
+        font-weight: bold;
+        font-size: 18px;
+        background: #f2c94c;
+        color: #333;
+        padding: 5px 10px;
+        border-radius: 10px;
+      }
+      .exp-bar-container {
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 20px;
+        padding: 3px;
+        position: relative; /* << THÊM DÒNG NÀY */
+      }
+      .exp-bar {
+        height: 15px;
+        background: linear-gradient(90deg, #4facfe, #00f2fe);
+        border-radius: 20px;
+        width: 0%;
+        transition: width 0.5s;
+      }
+      .mini-game h3 {
+        margin-top: 0;
+      }
+      .mini-game p {
+        font-size: 14px;
+        opacity: 0.8;
+      }
+      .btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.3s;
+        color: #fff;
+      }
+      .btn:hover {
+        opacity: 0.8;
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #555;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #00f2fe, #4facfe);
+      }
+      .btn-secondary {
+        background: linear-gradient(135deg, #43e97b, #38f9d7);
+      }
+      .stat-bar-container {
+        width: 100%;
+        height: 8px;
+        background-color: rgba(0, 0, 0, 0.4);
+        border-radius: 10px;
+        margin-top: 8px;
+        overflow: hidden;
+      }
+      .stat-bar {
+        height: 100%;
+        border-radius: 10px;
+        width: 100%;
+        transition: width 0.5s ease;
+      }
+      .countdown-timer {
+        font-size: 0.8em;
+        opacity: 0.7;
+        margin-left: 8px;
+        font-family: "Courier New", Courier, monospace;
+      }
+      #wakeUpNowBtn {
+        display: none;
+      }
+      .exp-text {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 12px;
+        color: white;
+        user-select: none; /* Ngăn người dùng vô tình bôi đen chữ */
+      }
+      .love-tree {
+        position: absolute;
+        right: 15px; /* Nằm ở góc phải */
+        bottom: 0;
+        width: 80px; /* Kích thước cây */
+        height: 80px;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .love-tree:hover {
+        transform: scale(1.05);
+      }
+      .love-tree img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <h1>Nuôi Thú</h1>
+      <div class="container">
+        <div class="pet-column">
+          <div class="game-stats">
+            <div id="levelDisplay">Level 1</div>
+            <div id="coinDisplay">💰 10</div>
+          </div>
+          <div class="exp-bar-container">
+            <div id="expBar" class="exp-bar"></div>
+            <!-- Xóa văn bản ở đây -->
+            <div id="expText" class="exp-text"></div>
+            <!-- Thêm thẻ div mới cho văn bản -->
+          </div>
+          <hr style="border-color: rgba(255, 255, 255, 0.1); margin: 20px 0" />
+
+          <div class="pet-stage">
+            <div class="pet-display">
+              <img
+                src=""
+                alt="pet"
+                id="petImage"
+                onclick="miniGameClick()"
+                title="Click vào đây để chơi!"
+              />
+            </div>
+            <div id="loveTree" class="love-tree">
+              <img src="" alt="Cây Tình Yêu" />
+            </div>
+          </div>
+
+          <h2 id="petName">Đang tải...</h2>
+          <p id="petMood">...</p>
+
+          <div class="stats">
+            <div class="stat">
+              <span>Hạnh phúc: <span id="happy">...</span></span
+              ><span class="countdown-timer" id="happyTimer">(...)</span>
+              <div class="stat-bar-container">
+                <div
+                  id="happyBar"
+                  class="stat-bar"
+                  style="background-color: #f2c94c"
+                ></div>
+              </div>
+            </div>
+            <div class="stat">
+              <span>Độ no: <span id="hunger">...</span></span
+              ><span class="countdown-timer" id="hungerTimer">(...)</span>
+              <div class="stat-bar-container">
+                <div
+                  id="hungerBar"
+                  class="stat-bar"
+                  style="background-color: #f2994a"
+                ></div>
+              </div>
+            </div>
+            <div class="stat">
+              <span>Năng lượng: <span id="energy">...</span></span
+              ><span class="countdown-timer" id="energyTimer">(...)</span>
+              <div class="stat-bar-container">
+                <div
+                  id="energyBar"
+                  class="stat-bar"
+                  style="background-color: #27ae60"
+                ></div>
+              </div>
+            </div>
+            <div class="stat">
+              <span>Sạch sẽ: <span id="clean">...</span></span
+              ><span class="countdown-timer" id="cleanTimer">(...)</span>
+              <div class="stat-bar-container">
+                <div
+                  id="cleanBar"
+                  class="stat-bar"
+                  style="background-color: #2d9cdb"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- === THAY ĐỔI 1: CẬP NHẬT VĂN BẢN TRÊN CÁC NÚT BẤM === -->
+          <div class="actions">
+            <button
+              class="btn btn-primary"
+              id="feedBtn"
+              onclick="doAction('feed')"
+            >
+              🍖 Cho ăn (+50 EXP)
+            </button>
+            <button
+              class="btn btn-secondary"
+              id="playBtn"
+              onclick="doAction('play')"
+            >
+              🎾 Chơi (+50 EXP)
+            </button>
+            <button
+              class="btn btn-primary"
+              id="sleepBtn"
+              onclick="doAction('sleep')"
+            >
+              🛏️ Ngủ (+50 EXP)
+            </button>
+            <button
+              class="btn btn-secondary"
+              id="wakeUpNowBtn"
+              onclick="doAction('wakeup')"
+            >
+              ☀️ Xong Ngay
+            </button>
+            <button
+              class="btn btn-secondary"
+              id="bathBtn"
+              onclick="doAction('bath')"
+            >
+              🛁 Tắm (+50 EXP)
+            </button>
+          </div>
+        </div>
+        <div class="game-column">
+          <div class="panel">
+            <div class="panel-group">
+              <input type="text" id="newName" placeholder="Đổi tên pet..." />
+              <button class="btn btn-primary" onclick="renamePet()">
+                Đổi tên
+              </button>
+            </div>
+            <h4>📜 Nhật ký hành động</h4>
+            <div class="log" id="log"><p>Chào mừng bạn!</p></div>
+          </div>
+          <div class="panel mini-game">
+            <h3>💰 Mini Game: Pet Clicker!</h3>
+            <p>Click liên tục vào thú cưng của bạn ở bên trái để nhận Coins!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyBsumPv8_hk16RcR-mwrx4UVbt8XMzi_2c",
+        authDomain: "love-diary-69c00.firebaseapp.com",
+        projectId: "love-diary-69c00",
+        storageBucket: "love-diary-69c00.appspot.com",
+        messagingSenderId: "299225297515",
+        appId: "1:299225297515:web:dda7bcb35a0c8ae95af72e",
+        measurementId: "G-213TXQLVFX",
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+
+      const SINGLE_PET_ID = "the_one_and_only_pet";
+      const increment = firebase.firestore.FieldValue.increment;
+
+      const petImages = {
+        happy: "https://cdn-icons-png.flaticon.com/512/14984/14984998.png",
+        sad: "https://cdn-icons-png.flaticon.com/512/11172/11172315.png",
+        sleepy: "https://cdn-icons-png.flaticon.com/512/12400/12400948.png",
+        needsBath: "https://cdn-icons-png.flaticon.com/512/11481/11481677.png",
+      };
+      // === DỮ LIỆU CÂY TÌNH YÊU ===
+      function getCurrentMonthString() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, "0"); // Tháng bắt đầu từ 0
+        return `${year}-${month}`;
+      }
+      const treeImages = [
+        "https://cdn-icons-png.flaticon.com/512/9616/9616995.png", // Level 0 (Hạt mầm)
+        "https://cdn-icons-png.flaticon.com/512/6347/6347041.png", // Level 1 (Nảy mầm)
+        "https://cdn-icons-png.flaticon.com/512/15142/15142115.png", // Level 2 (Cây nhỏ)
+        "https://cdn-icons-png.flaticon.com/512/6667/6667365.png", // Level 3 (Cây lớn)
+        "https://cdn-icons-png.flaticon.com/512/7144/7144369.png", // Level 4 (Ra hoa)
+      ];
+      const witheredTreeImage =
+        "https://cdn-icons-png.flaticon.com/512/9281/9281106.png"; // Cây héo
+      const FULL_CYCLE_SECONDS = {
+        hunger: 3600 * 4,
+        energy: 3600 * 4,
+        happy: 3600 * 4,
+        clean: 3600 * 4,
+      };
+
+      const DECAY_RATES = {
+        hunger: 100 / FULL_CYCLE_SECONDS.hunger,
+        energy: 100 / FULL_CYCLE_SECONDS.energy,
+        happy: 100 / FULL_CYCLE_SECONDS.happy,
+        clean: 100 / FULL_CYCLE_SECONDS.clean,
+      };
+      // === BẮT ĐẦU CODE MỚI: QUẢN LÝ NHẬT KÝ BẰNG FIREBASE ===
+
+      // Hàm này trả về ngày hiện tại dưới định dạng YYYY-MM-DD
+      function getTodayDateString() {
+        return new Date().toISOString().split("T")[0];
+      }
+
+      // Hàm lắng nghe và cập nhật nhật ký từ Firestore
+      function listenToLogChanges() {
+        const logRef = db.collection("logs").doc("daily_activity_log");
+
+        // Sử dụng .get() để đọc dữ liệu một lần và quyết định hành động
+        // thay vì .onSnapshot() để tránh vòng lặp vô hạn khi xóa
+        logRef
+          .get()
+          .then((doc) => {
+            const today = getTodayDateString();
+
+            // Trường hợp 1: Document tồn tại
+            if (doc.exists) {
+              const logData = doc.data();
+              // Nếu document là của ngày cũ
+              if (logData.date !== today) {
+                console.log("Phát hiện nhật ký cũ, đang xóa và tạo mới...");
+                // Xóa document cũ và tạo mới ngay sau đó
+                logRef.delete().then(() => {
+                  const welcomeMessage = "Chào mừng bạn đến với ngày mới!";
+                  logRef
+                    .set({
+                      date: today,
+                      entries: [welcomeMessage],
+                    })
+                    .then(() => {
+                      // Sau khi tạo mới thành công, bắt đầu lắng nghe thay đổi
+                      subscribeToLogUpdates();
+                    });
+                });
+              } else {
+                // Nếu document là của ngày hôm nay, chỉ cần bắt đầu lắng nghe
+                subscribeToLogUpdates();
+              }
+            }
+            // Trường hợp 2: Document không tồn tại
+            else {
+              console.log("Không tìm thấy nhật ký, đang tạo mới...");
+              const welcomeMessage = "Chào mừng bạn đến với ngày mới!";
+              logRef
+                .set({
+                  date: today,
+                  entries: [welcomeMessage],
+                })
+                .then(() => {
+                  // Sau khi tạo mới, bắt đầu lắng nghe
+                  subscribeToLogUpdates();
+                });
+            }
+          })
+          .catch((error) => {
+            console.error("Lỗi khi kiểm tra nhật ký:", error);
+          });
+
+        // Hàm con để bắt đầu lắng nghe real-time sau khi đã kiểm tra xong
+        function subscribeToLogUpdates() {
+          logRef.onSnapshot((doc) => {
+            const logBox = document.getElementById("log");
+            if (doc.exists) {
+              const entries = doc.data().entries || [];
+              logBox.innerHTML = entries
+                .map((msg) => `<p>• ${msg}</p>`)
+                .join("");
+              logBox.scrollTop = logBox.scrollHeight;
+            }
+          });
+        }
+      }
+      // === THAY ĐỔI 2: THÊM MẢNG LỜI NHẮN VÀ HÀM PHÁO HOA ===
+      const lovingMessages = [
+        "Cảm ơn bạn đã luôn ở bên tớ nhé!",
+        "Hành trình của chúng ta thật tuyệt vời!",
+        "Yêu bạn nhiều lắm, người bạn thân nhất của tớ!",
+        "Mỗi ngày trôi qua với bạn đều là một cuộc phiêu lưu!",
+        "Bạn là người chủ tuyệt vời nhất trên đời!",
+        "Wow! Chúng ta đã đạt một cột mốc lớn!",
+        "Tình bạn của chúng ta sẽ còn vươn xa hơn nữa!",
+      ];
+
+      function triggerFireworks() {
+        const duration = 3 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = {
+          startVelocity: 30,
+          spread: 360,
+          ticks: 60,
+          zIndex: 100,
+        };
+
+        function randomInRange(min, max) {
+          return Math.random() * (max - min) + min;
+        }
+
+        const interval = setInterval(function () {
+          const timeLeft = animationEnd - Date.now();
+          if (timeLeft <= 0) {
+            return clearInterval(interval);
+          }
+          const particleCount = 50 * (timeLeft / duration);
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+          });
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+          });
+        }, 250);
+      }
+
+      let petMovementState = { isMoving: false, currentMood: "" };
+      let isActionInProgress = false;
+      let currentPetState = null;
+      let lastKnownLevel = 1; // Biến để theo dõi level
+
+      function initializeApp() {
+        listenToLoveTreeChanges();
+        listenToLogChanges();
+        listenToPetChanges();
+        setInterval(petMovementBrain, 4000);
+        setInterval(updateLiveStats, 1000);
+      }
+
+      function createNewPet() {
+        const petRef = db.collection("pets").doc(SINGLE_PET_ID);
+        const defaultPet = {
+          name: "Mochi (Chung)",
+          happy: 100,
+          hunger: 100,
+          energy: 100,
+          clean: 100,
+          mood: "Vui vẻ",
+          level: 1,
+          exp: 0,
+          coins: 10,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          isSleeping: false,
+          wakeUpTime: null,
+        };
+        petRef.set(defaultPet).then(() => {
+          lastKnownLevel = 1; // Reset level khi tạo pet mới
+          logAction(`Chào mừng! Đã tạo hoặc tải lại pet chung của mọi người!`);
+        });
+      }
+
+      function listenToPetChanges() {
+        db.collection("pets")
+          .doc(SINGLE_PET_ID)
+          .onSnapshot((doc) => {
+            if (doc.exists) {
+              const data = doc.data();
+
+              // === THAY ĐỔI 3: LOGIC KIỂM TRA LEVEL UP ĐẶC BIỆT ===
+              const newLevel = data.level || 1;
+              if (newLevel > lastKnownLevel) {
+                if (newLevel % 20 === 0) {
+                  triggerFireworks();
+                  const randomMessage =
+                    lovingMessages[
+                      Math.floor(Math.random() * lovingMessages.length)
+                    ];
+                  logAction(
+                    `💖 ${data.name} (Level ${newLevel}) muốn nói: "${randomMessage}"`
+                  );
+                }
+              }
+              lastKnownLevel = newLevel; // Cập nhật level
+
+              currentPetState = {
+                ...data,
+                updatedAt: data.updatedAt.toDate().getTime(),
+                wakeUpTime: data.wakeUpTime
+                  ? data.wakeUpTime.toDate().getTime()
+                  : null,
+              };
+              updateUI(data);
+            } else {
+              createNewPet();
+            }
+          });
+      }
+
+      function formatTime(totalSeconds) {
+        if (totalSeconds <= 0) return "00:00:00";
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = Math.floor(totalSeconds % 60);
+        return `${String(h).padStart(2, "0")}:${String(m).padStart(
+          2,
+          "0"
+        )}:${String(s).padStart(2, "0")}`;
+      }
+
+      function determineMood(stats) {
+        if (
+          stats.hunger <= 0 &&
+          stats.happy <= 0 &&
+          stats.energy <= 0 &&
+          stats.clean <= 0
+        )
+          return "Tệ";
+        if (stats.isSleeping) return "Đang ngủ... ZzZ";
+        if (stats.energy < 10) return "Buồn ngủ";
+        if (stats.hunger < 40) return "Hơi đói";
+        if (stats.happy < 40) return "Hơi buồn chán";
+        if (stats.clean < 10) return "Muốn thơm...";
+        return "Vui vẻ";
+      }
+
+      function updateLiveStats() {
+        if (!currentPetState) return;
+
+        const now = Date.now();
+
+        if (currentPetState.isSleeping && now >= currentPetState.wakeUpTime) {
+          doAction("wakeup");
+          return;
+        }
+
+        const lastUpdated = currentPetState.updatedAt;
+        const secondsPassed = (now - lastUpdated) / 1000;
+
+        let calculatedStats = {};
+        calculatedStats.hunger = Math.max(
+          0,
+          currentPetState.hunger - secondsPassed * DECAY_RATES.hunger
+        );
+        calculatedStats.happy = Math.max(
+          0,
+          currentPetState.happy - secondsPassed * DECAY_RATES.happy
+        );
+        calculatedStats.energy = Math.max(
+          0,
+          currentPetState.energy - secondsPassed * DECAY_RATES.energy
+        );
+        calculatedStats.clean = Math.max(
+          0,
+          currentPetState.clean - secondsPassed * DECAY_RATES.clean
+        );
+
+        const newMood = determineMood({
+          ...calculatedStats,
+          isSleeping: currentPetState.isSleeping,
+        });
+
+        const petMoodEl = document.getElementById("petMood");
+        petMoodEl.innerText = `Tâm trạng: ${newMood}`;
+
+        if (newMood === "Tệ") petMoodEl.style.color = "#ff4757";
+        else petMoodEl.style.color = "#a3e635";
+
+        const moodImage = newMood.toLowerCase();
+        if (moodImage.includes("ngủ")) {
+          document.getElementById("petImage").src = petImages.sleepy;
+        } else if (moodImage.includes("thơm")) {
+          document.getElementById("petImage").src = petImages.needsBath;
+        } else if (
+          moodImage.includes("tệ") ||
+          moodImage.includes("đói") ||
+          moodImage.includes("buồn")
+        ) {
+          document.getElementById("petImage").src = petImages.sad;
+        } else {
+          document.getElementById("petImage").src = petImages.happy;
+        }
+
+        // Vòng lặp này bây giờ chỉ để cập nhật giao diện
+        for (const statName in calculatedStats) {
+          let currentValue = calculatedStats[statName];
+
+          // Sửa lỗi hiển thị 99 thay vì 100
+          if (currentValue > 99) currentValue = 100;
+          else currentValue = Math.round(currentValue);
+
+          const lastUpdated = currentPetState.updatedAt;
+          const now = Date.now();
+          const secondsPassed = (now - lastUpdated) / 1000;
+          let timeRemaining = FULL_CYCLE_SECONDS[statName] - secondsPassed;
+          if (timeRemaining < 0) timeRemaining = 0;
+
+          document.getElementById(statName).innerText = currentValue;
+          document.getElementById(`${statName}Bar`).style.width =
+            currentValue + "%";
+          document.getElementById(
+            `${statName}Timer`
+          ).innerText = `(${formatTime(timeRemaining)})`;
+        }
+
+        // === KHỐI LOGIC VÔ HIỆU HÓA NÚT ĐÃ ĐƯỢC SỬA LẠI ===
+        const feedBtn = document.getElementById("feedBtn");
+        const playBtn = document.getElementById("playBtn");
+        const sleepBtn = document.getElementById("sleepBtn");
+        const wakeUpNowBtn = document.getElementById("wakeUpNowBtn");
+        const bathBtn = document.getElementById("bathBtn");
+
+        if (currentPetState.isSleeping) {
+          feedBtn.disabled = true;
+          playBtn.disabled = true;
+          bathBtn.disabled = true;
+          sleepBtn.style.display = "none";
+          wakeUpNowBtn.style.display = "block";
+        } else {
+          // Lấy giá trị đã hiển thị trên DOM để đảm bảo tính nhất quán
+          const displayedHunger = parseInt(
+            document.getElementById("hunger").innerText
+          );
+          const displayedHappy = parseInt(
+            document.getElementById("happy").innerText
+          );
+          const displayedEnergy = parseInt(
+            document.getElementById("energy").innerText
+          );
+          const displayedClean = parseInt(
+            document.getElementById("clean").innerText
+          );
+
+          feedBtn.disabled = displayedHunger >= 100;
+          playBtn.disabled = displayedHappy >= 100;
+          bathBtn.disabled = displayedClean >= 100;
+          sleepBtn.disabled = displayedEnergy >= 100;
+
+          sleepBtn.style.display = "block";
+          wakeUpNowBtn.style.display = "none";
+        }
+      }
+      function updateUI(data) {
+        document.getElementById("petName").innerText = data.name;
+        document.getElementById(
+          "levelDisplay"
+        ).innerText = `Level ${data.level}`;
+        document.getElementById("coinDisplay").innerText = `💰 ${data.coins}`;
+        const expNeeded = (data.level || 1) * 100;
+        const expPercent = Math.min(100, ((data.exp || 0) / expNeeded) * 100);
+        const expBar = document.getElementById("expBar");
+        const expText = document.getElementById("expText"); // Lấy thẻ div văn bản mới
+
+        expBar.style.width = expPercent + "%";
+        expText.innerText = `${data.exp || 0} / ${expNeeded} EXP`; // Hiển thị văn bản trên thẻ mới
+        updateLiveStats();
+      }
+
+      // === THAY ĐỔI 2: CẬP NHẬT LƯỢNG EXP TRONG LOGIC ===
+      async function doAction(type) {
+        if (isActionInProgress) return;
+        isActionInProgress = true;
+        const petRef = db.collection("pets").doc(SINGLE_PET_ID);
+
+        try {
+          if (type === "bath") {
+            document.getElementById("petImage").src = petImages.needsBath;
+          }
+
+          await db.runTransaction(async (transaction) => {
+            const petDoc = await transaction.get(petRef);
+            if (!petDoc.exists) throw new Error("Document does not exist!");
+
+            let data = petDoc.data();
+            const now = firebase.firestore.Timestamp.now();
+
+            if (
+              type === "wakeup" ||
+              (data.isSleeping && now.toMillis() >= data.wakeUpTime.toMillis())
+            ) {
+              let shouldAddExp = data.energy < 100;
+              data.isSleeping = false;
+              data.wakeUpTime = null;
+              data.energy = 100;
+              data.updatedAt = now;
+              logAction(`${data.name} đã thức dậy, tràn đầy năng lượng!`);
+              if (type === "wakeup") {
+                if (shouldAddExp) {
+                  const expNeeded = (data.level || 1) * 100;
+                  data.exp = (data.exp || 0) + 50; // Thay đổi ở đây
+                  logAction(`Bạn nhận được 50 EXP!`); // Thay đổi ở đây
+                  if (data.exp >= expNeeded) {
+                    data.level += 1;
+                    data.exp -= expNeeded;
+                    data.coins += 50;
+                    logAction(
+                      `🎉 CHÚC MỪNG! ${data.name} đã lên Level ${data.level}! Bạn nhận được 50 coins.`
+                    );
+                  }
+                } else {
+                  logAction(`Năng lượng đã đầy, không nhận được EXP!`);
+                }
+                transaction.update(petRef, data);
+                return;
+              }
+            }
+
+            if (data.isSleeping && type !== "wakeup") {
+              logAction(`${data.name} đang ngủ, đừng làm phiền!`);
+              isActionInProgress = false;
+              return;
+            }
+
+            const lastUpdated = data.updatedAt.toMillis();
+            const secondsPassed = (now.toMillis() - lastUpdated) / 1000;
+
+            const oldStats = {
+              hunger: Math.max(
+                0,
+                data.hunger - secondsPassed * DECAY_RATES.hunger
+              ),
+              happy: Math.max(
+                0,
+                data.happy - secondsPassed * DECAY_RATES.happy
+              ),
+              energy: Math.max(
+                0,
+                data.energy - secondsPassed * DECAY_RATES.energy
+              ),
+              clean: Math.max(
+                0,
+                data.clean - secondsPassed * DECAY_RATES.clean
+              ),
+            };
+
+            data.hunger = oldStats.hunger;
+            data.happy = oldStats.happy;
+            data.energy = oldStats.energy;
+            data.clean = oldStats.clean;
+
+            let actionMsg = "";
+            let statToCheck = "";
+
+            switch (type) {
+              case "feed":
+                statToCheck = "hunger";
+                if (data.hunger < 100) {
+                  actionMsg = `Bạn đã cho ${data.name} ăn no nê!`;
+                  let increaseInterval = setInterval(async () => {
+                    const petSnap = await petRef.get();
+                    if (!petSnap.exists) return clearInterval(increaseInterval);
+
+                    let petData = petSnap.data();
+                    if (petData.hunger < 100) {
+                      let newHunger = Math.min(100, petData.hunger + 20);
+                      await petRef.update({ hunger: newHunger });
+                      if (newHunger >= 100) {
+                        clearInterval(increaseInterval);
+                      }
+                    } else {
+                      clearInterval(increaseInterval);
+                    }
+                  }, 1000);
+                } else {
+                  actionMsg = `${data.name} đã no, không ăn thêm!`;
+                }
+                break;
+
+              case "play":
+                statToCheck = "happy";
+                if (data.happy < 100) {
+                  actionMsg = `Bạn đã chơi cùng ${data.name}! Vui quá!`;
+                  let increaseInterval = setInterval(async () => {
+                    const petSnap = await petRef.get();
+                    if (!petSnap.exists) return clearInterval(increaseInterval);
+
+                    let petData = petSnap.data();
+                    if (petData.happy < 100) {
+                      let newHappy = Math.min(100, petData.happy + 20);
+                      await petRef.update({ happy: newHappy });
+                      if (newHappy >= 100) {
+                        clearInterval(increaseInterval);
+                      }
+                    } else {
+                      clearInterval(increaseInterval);
+                    }
+                  }, 1000);
+                } else {
+                  actionMsg = `${data.name} đang rất vui rồi!`;
+                }
+                break;
+
+              case "bath":
+                statToCheck = "clean";
+                if (data.clean < 100) {
+                  actionMsg = `${data.name} đã được tắm rửa sạch sẽ!`;
+                  let increaseInterval = setInterval(async () => {
+                    const petSnap = await petRef.get();
+                    if (!petSnap.exists) return clearInterval(increaseInterval);
+                    let petData = petSnap.data();
+                    if (petData.clean < 100) {
+                      let newClean = Math.min(100, petData.clean + 20);
+                      await petRef.update({
+                        clean: newClean,
+                      });
+                      if (newClean >= 100) {
+                        clearInterval(increaseInterval);
+                      }
+                    } else {
+                      clearInterval(increaseInterval);
+                    }
+                  }, 1000);
+                } else {
+                  actionMsg = `${data.name} đã sạch sẽ rồi!`;
+                }
+                break;
+
+              case "sleep":
+                statToCheck = "energy";
+                if (!data.isSleeping) {
+                  data.isSleeping = true;
+                  data.wakeUpTime = firebase.firestore.Timestamp.fromMillis(
+                    now.toMillis() + 2 * 3600 * 1000
+                  );
+                  actionMsg = `${data.name} đã đi ngủ. Hẹn gặp lại sau 2 tiếng!`;
+                } else {
+                  actionMsg = `${data.name} đã ngủ rồi.`;
+                }
+                break;
+            }
+
+            if (actionMsg) logAction(actionMsg);
+
+            let shouldAddExp = false;
+            if (statToCheck && oldStats[statToCheck] < 100) {
+              shouldAddExp = true;
+            } else if (statToCheck) {
+              logAction(`Chỉ số ${statToCheck} đã đầy, không nhận được EXP!`);
+            }
+
+            if (shouldAddExp) {
+              const expNeeded = (data.level || 1) * 100;
+              data.exp = (data.exp || 0) + 50; // Thay đổi ở đây
+              logAction(`Bạn nhận được 50 EXP!`); // Thay đổi ở đây
+
+              if (data.exp >= expNeeded) {
+                data.level += 1;
+                data.exp -= expNeeded;
+                data.coins = (data.coins || 0) + 50;
+                logAction(
+                  `🎉 CHÚC MỪNG! ${data.name} đã lên Level ${data.level}! Bạn nhận được 50 coins.`
+                );
+              }
+            }
+
+            data.updatedAt = now;
+            transaction.update(petRef, data);
+          });
+        } catch (error) {
+          console.error("Lỗi transaction:", error);
+        } finally {
+          isActionInProgress = false;
+        }
+      }
+
+      function petMovementBrain() {
+        if (
+          petMovementState.isMoving ||
+          (currentPetState && currentPetState.isSleeping)
+        )
+          return;
+        const shouldMove = Math.random() > 0.4;
+        if (shouldMove) movePetRandomly();
+      }
+      function movePetRandomly() {
+        petMovementState.isMoving = true;
+        const petDisplay = document.querySelector(".pet-display");
+        const stage = document.querySelector(".pet-stage");
+        const petImage = document.getElementById("petImage");
+        const stageWidth = stage.offsetWidth;
+        const petWidth = petDisplay.offsetWidth;
+        const targetX = Math.random() * (stageWidth - petWidth);
+        const currentX = petDisplay.offsetLeft;
+        const direction = targetX < currentX ? "scaleX(-1)" : "scaleX(1)";
+        petImage.style.setProperty("--transform-direction", direction);
+        petImage.style.transform = direction;
+        petDisplay.style.left = targetX + "px";
+        setTimeout(() => {
+          petMovementState.isMoving = false;
+        }, 2000);
+      }
+      function renamePet() {
+        if (isActionInProgress) return;
+
+        const newNameInput = document.getElementById("newName");
+        const newName = newNameInput.value.trim();
+        const currentName = document.getElementById("petName").innerText;
+
+        // 1. Kiểm tra nếu không nhập gì
+        if (!newName) {
+          logAction("⚠️ Vui lòng nhập tên mới cho pet!");
+          return;
+        }
+
+        // 2. Kiểm tra nếu tên mới trùng tên cũ
+        if (newName === currentName) {
+          logAction(`💡 Tên của pet đã là "${newName}" rồi!`);
+          newNameInput.value = ""; // Xóa nội dung trong ô input
+          return;
+        }
+
+        // 3. Kiểm tra độ dài của tên (ví dụ: từ 3 đến 15 ký tự)
+        if (newName.length < 3 || newName.length > 15) {
+          logAction("⚠️ Tên phải có độ dài từ 3 đến 15 ký tự!");
+          return;
+        }
+
+        isActionInProgress = true; // Khóa hành động sau khi đã qua các bước kiểm tra
+
+        db.collection("pets")
+          .doc(SINGLE_PET_ID)
+          .update({ name: newName })
+          .then(() => {
+            logAction(`✨ Bạn đã đổi tên pet thành "${newName}"`);
+            newNameInput.value = ""; // Xóa nội dung trong ô input
+          })
+          .catch((error) => {
+            console.error("Lỗi khi đổi tên: ", error);
+            logAction(" Rất tiếc, đã có lỗi xảy ra khi đổi tên.");
+          })
+          .finally(() => {
+            isActionInProgress = false; // Mở khóa hành động
+          });
+      }
+      function miniGameClick() {
+        if (
+          isActionInProgress ||
+          (currentPetState && currentPetState.isSleeping)
+        )
+          return;
+        doAction("play");
+      }
+      function logAction(msg) {
+        const logRef = db.collection("logs").doc("daily_activity_log");
+
+        logRef
+          .update({
+            entries: firebase.firestore.FieldValue.arrayUnion(msg),
+          })
+          .catch((error) => {
+            if (error.code === "not-found") {
+              const today = getTodayDateString();
+              logRef.set({ date: today, entries: [msg] });
+            } else {
+              console.error("Lỗi khi cập nhật nhật ký:", error);
+            }
+          });
+      }
+      // === CÁC HÀM XỬ LÝ CÂY TÌNH YÊU ===
+      // Hàm lắng nghe và cập nhật trạng thái của cây
+      function listenToLoveTreeChanges() {
+        const treeRef = db.collection("loveTree").doc("our_tree");
+
+        treeRef.onSnapshot(
+          (doc) => {
+            const today = getTodayDateString();
+            const currentMonth = getCurrentMonthString();
+
+            if (!doc.exists) {
+              treeRef.set({
+                level: 0,
+                health: 100,
+                lastWatered: null,
+                reviveCount: 0,
+                reviveMonth: currentMonth,
+              });
+              return;
+            }
+
+            let treeData = doc.data();
+            let { level, health, lastWatered, reviveCount, reviveMonth } =
+              treeData;
+
+            // TỰ ĐỘNG RESET KHI QUA THÁNG MỚI NẾU CÂY ĐÃ HÉO VÀ HẾT LƯỢT CỨU
+            if (
+              health <= 0 &&
+              reviveCount >= 3 &&
+              reviveMonth !== currentMonth
+            ) {
+              logAction(
+                "🌸 Đã sang tháng mới! Cây Tình Yêu đã được gieo trồng lại."
+              );
+              treeRef.set({
+                // Dùng set để ghi đè toàn bộ
+                level: 0,
+                health: 100,
+                lastWatered: null,
+                reviveCount: 0,
+                reviveMonth: currentMonth,
+              });
+              return; // Dừng lại để onSnapshot chạy lại với dữ liệu mới
+            }
+
+            if (lastWatered && lastWatered !== today) {
+              const lastWateredDate = new Date(lastWatered);
+              const todayDate = new Date(today);
+              const daysMissed = Math.floor(
+                (todayDate - lastWateredDate) / (1000 * 60 * 60 * 24)
+              );
+
+              if (daysMissed > 0) {
+                const newHealth = Math.max(0, health - daysMissed * 25);
+                if (newHealth !== health) {
+                  treeRef.update({ health: newHealth });
+                  treeData.health = newHealth;
+                }
+              }
+            }
+
+            const treeImageEl = document.querySelector("#loveTree img");
+            if (treeData.health <= 0) {
+              treeImageEl.src = witheredTreeImage;
+            } else {
+              const displayLevel = Math.min(
+                treeData.level,
+                treeImages.length - 1
+              );
+              treeImageEl.src = treeImages[displayLevel];
+            }
+
+            document.getElementById("loveTree").onclick = () =>
+              waterTheTree(treeData);
+          },
+          (error) => {
+            console.error("Lỗi khi lắng nghe Cây Tình Yêu:", error);
+            logAction("⚠️ Không thể cập nhật trạng thái Cây Tình Yêu.");
+          }
+        );
+      }
+
+      // Hàm xử lý hành động tưới cây
+
+      async function waterTheTree(treeData) {
+        if (isActionInProgress) return;
+        const today = getTodayDateString();
+        const currentMonth = getCurrentMonthString();
+
+        let { health, level, lastWatered, reviveCount, reviveMonth } = treeData;
+
+        if (lastWatered === today) {
+          logAction(
+            "❤️ Cây đã được tưới hôm nay rồi. Hãy quay lại vào ngày mai nhé!"
+          );
+          return;
+        }
+
+        const treeRef = db.collection("loveTree").doc("our_tree");
+
+        if (health <= 0) {
+          // Nếu đã sang tháng mới, reset lượt hồi sinh
+          if (reviveMonth !== currentMonth) {
+            reviveCount = 0;
+            logAction("Tháng mới, hy vọng mới! Bạn có 3 lượt hồi sinh cây.");
+          }
+
+          if (reviveCount >= 3) {
+            logAction(
+              `🥀 Cây đã héo và bạn đã hết lượt hồi sinh trong tháng này. Hãy quay lại vào tháng sau.`
+            );
+            return;
+          }
+
+          logAction("🥀 Cây đã héo... Cùng nhau chăm sóc lại từ đầu nào!");
+          const newReviveCount = reviveCount + 1;
+          await treeRef.update({
+            health: 25,
+            level: 0,
+            lastWatered: today,
+            reviveCount: newReviveCount,
+            reviveMonth: currentMonth,
+          });
+          logAction(
+            `🌱 Cây đã được hồi sinh! (Còn ${
+              3 - newReviveCount
+            } lượt trong tháng).`
+          );
+          return;
+        }
+        // BƯỚC 2: NẾU CÂY VẪN SỐNG, MỚI KIỂM TRA XEM ĐÃ TƯỚI CHƯA
+        if (lastWatered === today) {
+          logAction(
+            "❤️ Cây đã được tưới hôm nay rồi. Hãy quay lại vào ngày mai nhé!"
+          );
+          return;
+        }
+
+        isActionInProgress = true;
+        try {
+          let newHealth = Math.min(100, health + 25);
+          let newLevel = level;
+
+          if (health < 100 && newHealth >= 100) {
+            newLevel++;
+            logAction(
+              `🌳 Cây Tình Yêu đã lớn thêm một chút! (Level ${newLevel})`
+            );
+          }
+
+          await treeRef.update({
+            health: newHealth,
+            level: newLevel,
+            lastWatered: today,
+          });
+
+          logAction("💧 Hai bạn đã cùng nhau tưới cây Tình Yêu!");
+        } catch (error) {
+          console.error("Lỗi khi tưới cây:", error);
+          logAction("Rất tiếc, đã có lỗi khi tưới cây.");
+        } finally {
+          isActionInProgress = false;
+        }
+      }
+      // ================================================================
+      // === BỘ CÔNG CỤ MÔ PHỎNG CÂY TÌNH YÊU (DÀNH CHO KIỂM THỬ) ===
+      // ================================================================
+
+      // // Công cụ chính, có thể gọi trực tiếp từ Console
+      // function simulateTree(scenario) {
+      //   const treeRef = db.collection("loveTree").doc("our_tree");
+      //   let updates = {};
+
+      //   switch (scenario) {
+      //     case "wither":
+      //       console.log("Mô phỏng: LÀM CÂY HÉO");
+      //       alert("Chuẩn bị làm cây héo (health = 0).");
+      //       updates = { health: 0 };
+      //       break;
+
+      //     case "revive":
+      //       console.log("Mô phỏng: PHỤC HỒI CÂY HOÀN TOÀN");
+      //       alert("Chuẩn bị phục hồi cây về trạng thái ban đầu.");
+      //       updates = {
+      //         health: 100,
+      //         level: 0,
+      //         lastWatered: null,
+      //         reviveCount: 0,
+      //         reviveMonth: getCurrentMonthString(),
+      //       };
+      //       break;
+
+      //     case "use_all_revives":
+      //       console.log("Mô phỏng: DÙNG HẾT LƯỢT HỒI SINH");
+      //       alert(
+      //         "Chuẩn bị làm cây héo VÀ dùng hết 3 lượt hồi sinh của tháng này."
+      //       );
+      //       updates = {
+      //         health: 0,
+      //         reviveCount: 3,
+      //         reviveMonth: getCurrentMonthString(),
+      //       };
+      //       break;
+
+      //     case "next_month":
+      //       console.log("Mô phỏng: CHUYỂN SANG THÁNG SAU");
+      //       alert(
+      //         "Chuẩn bị giả lập trạng thái của cây như thể đã ở tháng trước."
+      //       );
+      //       const lastMonth = new Date();
+      //       lastMonth.setMonth(lastMonth.getMonth() - 1);
+      //       const lastMonthString = `${lastMonth.getFullYear()}-${String(
+      //         lastMonth.getMonth() + 1
+      //       ).padStart(2, "0")}`;
+      //       updates = { reviveMonth: lastMonthString };
+      //       break;
+
+      //     default:
+      //       console.log(
+      //         "Kịch bản không hợp lệ. Các kịch bản có sẵn: 'wither', 'revive', 'use_all_revives', 'next_month'"
+      //       );
+      //       return;
+      //   }
+
+      //   treeRef
+      //     .update(updates)
+      //     .then(() => alert(`Mô phỏng kịch bản '${scenario}' thành công!`))
+      //     .catch((error) =>
+      //       console.error(`Lỗi khi mô phỏng kịch bản '${scenario}':`, error)
+      //     );
+      // }
+
+      initializeApp();
+    </script>
+  </body>
+</html>
