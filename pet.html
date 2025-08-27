@@ -442,10 +442,10 @@
       const witheredTreeImage =
         "https://cdn-icons-png.flaticon.com/512/9281/9281106.png"; // Cây héo
       const FULL_CYCLE_SECONDS = {
-        hunger: 3600 * 4,
-        energy: 3600 * 4,
-        happy: 3600 * 4,
-        clean: 3600 * 4,
+        hunger: 3600 * 6,
+        energy: 3600 * 6,
+        clean: 3600 * 6,
+        happy: 3600 * 6,
       };
 
       const DECAY_RATES = {
@@ -1086,7 +1086,15 @@
           (currentPetState && currentPetState.isSleeping)
         )
           return;
-        doAction("play");
+        startMiniGame(); 
+      }
+      function startMiniGame() {
+        let win = Math.random() <= 0.2;
+        if (win) {
+          doAction("play");
+        } else {
+          logAction("Bạn chơi dở bị pet chê 😢");
+        }     
       }
       function logAction(msg) {
         const logRef = db.collection("logs").doc("daily_activity_log");
