@@ -1157,12 +1157,15 @@
               return; // Dừng lại để onSnapshot chạy lại với dữ liệu mới
             }
 
-            if (lastWatered && lastWatered !== today) {
+            if (lastWatered) {
               const lastWateredDate = new Date(lastWatered);
-              const todayDate = new Date(today);
-              const daysMissed = Math.floor(
-                (todayDate - lastWateredDate) / (1000 * 60 * 60 * 24)
-              );
+              const now = new Date();
+
+              // Số giờ trôi qua từ lần tưới cuối
+              const hoursPassed = (now - lastWateredDate) / (1000 * 60 * 60);
+
+              // Cứ mỗi 24h thì mất 25 máu
+              const daysMissed = Math.floor(hoursPassed / 24);
 
               if (daysMissed > 0) {
                 const newHealth = Math.max(0, health - daysMissed * 25);
@@ -1231,7 +1234,7 @@
           await treeRef.update({
             health: 25,
             level: 0,
-            lastWatered: today,
+            lastWatered: new Date().toISOString(),
             reviveCount: newReviveCount,
             reviveMonth: currentMonth,
           });
@@ -1265,7 +1268,7 @@
           await treeRef.update({
             health: newHealth,
             level: newLevel,
-            lastWatered: today,
+            lastWatered: new Date().toISOString(),
           });
 
           logAction("💧 Hai bạn đã cùng nhau tưới cây Tình Yêu!");
