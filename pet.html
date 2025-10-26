@@ -1114,7 +1114,7 @@
       }
       // === CÁC HÀM XỬ LÝ CÂY TÌNH YÊU ===
       // Hàm lắng nghe và cập nhật trạng thái của cây
-      function listenToLoveTreeChanges() {
+      /*function listenToLoveTreeChanges() {
         const treeRef = db.collection("loveTree").doc("our_tree");
 
         treeRef.onSnapshot(
@@ -1281,7 +1281,187 @@
         } finally {
           isActionInProgress = false;
         }
+      }*/
+
+      function getTodayISO() {
+        const d = new Date();
+        return d.toISOString().slice(0, 10); // YYYY-MM-DD
       }
+
+      function getCurrentMonthString() {
+        const d = new Date();
+        return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`; // YYYY-MM
+      }
+      function listenToLoveTreeChanges() {
+  const treeRef = db.collection("loveTree").doc("our_tree");
+
+  treeRef.onSnapshot(async (doc) => {
+    const today = getTodayISO();
+    const currentMonth = getCurrentMonthString();
+
+    // Nếu chưa có document -> khởi tạo
+    if (!doc.exists) {
+      await treeRef.set({
+        level: 0,
+        health: 100,
+        lastWatered: null,
+        reviveCount: 0,
+        reviveMonth: currentMonth,
+        lastDeductDate: null, // dùng để tránh trừ lặp
+      });
+      return;
+    }
+
+    let data = doc.data();
+    let {
+      level,
+      health,
+      lastWatered,
+      reviveCount,
+      reviveMonth,
+      lastDeductDate,
+    } = data;
+
+    // Reset khi sang tháng mới & đã hết lượt hồi sinh
+    if (health <= 0 && reviveCount >= 3 && reviveMonth !== currentMonth) {
+      logAction("🌸 Đã sang tháng mới! Cây được gieo trồng lại.");
+      await treeRef.set({
+        level: 0,
+        health: 100,
+        lastWatered: null,
+        reviveCount: 0,
+        reviveMonth: currentMonth,
+        lastDeductDate: null,
+      });
+      return;
+    }
+
+    // Trừ máu nếu bỏ tưới (dùng transaction để tránh lặp)
+    if (lastWatered && lastWatered !== today && lastDeductDate !== today) {
+      const lastWateredDate = new Date(lastWatered);
+      const todayDate = new Date(today);
+      const daysMissed = Math.floor(
+        (todayDate - lastWateredDate) / (1000 * 60 * 60 * 24)
+      );
+
+      if (Number.isFinite(daysMissed) && daysMissed > 0) {
+        try {
+          await db.runTransaction(async (tx) => {
+            const snap = await tx.get(treeRef);
+            if (!snap.exists) return;
+            const cur = snap.data();
+
+            // Double check để tránh lặp do nhiều snapshot
+            if (cur.lastDeductDate === today) return;
+
+            const newHealth = Math.max(0, cur.health - daysMissed * 25);
+            tx.update(treeRef, {
+              health: newHealth,
+              lastDeductDate: today,
+            });
+          });
+        } catch (err) {
+          console.error("Transaction error (deduct health):", err);
+        }
+      }
+    }
+
+    // Update UI
+    const treeImageEl = document.querySelector("#loveTree img");
+    if (health <= 0) {
+      treeImageEl.src = witheredTreeImage;
+    } else {
+      const displayLevel = Math.min(level, treeImages.length - 1);
+      treeImageEl.src = treeImages[displayLevel];
+    }
+
+    document.getElementById("loveTree").onclick = () => waterTheTree(data);
+  });
+}
+let isTreeActionInProgress = false;
+
+async function waterTheTree(treeData) {
+  if (isTreeActionInProgress) return;
+  isActionInProgress = true;
+
+  const treeRef = db.collection("loveTree").doc("our_tree");
+  const today = getTodayISO();
+  const currentMonth = getCurrentMonthString();
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(treeRef);
+      if (!snap.exists) return;
+
+      let {
+        health,
+        level,
+        lastWatered,
+        reviveCount,
+        reviveMonth,
+      } = snap.data();
+
+      // Nếu đã tưới hôm nay
+      if (lastWatered === today) {
+        logAction("❤️ Cây đã được tưới hôm nay. Hãy quay lại vào ngày mai!");
+        return;
+      }
+
+      // Nếu cây đã chết
+      if (health <= 0) {
+        // Reset lượt revive khi qua tháng mới
+        if (reviveMonth !== currentMonth) {
+          reviveCount = 0;
+          reviveMonth = currentMonth;
+          logAction("✨ Tháng mới! Lượt hồi sinh đã được làm mới.");
+        }
+
+        if (reviveCount >= 3) {
+          logAction("🥀 Cây đã hết lượt hồi sinh tháng này. Hãy đợi tháng sau.");
+          return;
+        }
+
+        const newReviveCount = reviveCount + 1;
+        tx.update(treeRef, {
+          health: 25,
+          level: 0,
+          lastWatered: today,
+          lastDeductDate: today,
+          reviveCount: newReviveCount,
+          reviveMonth: currentMonth,
+        });
+        logAction(`🌱 Cây được hồi sinh! Còn ${3 - newReviveCount} lượt.`);
+        return;
+      }
+
+      // Cây đang sống -> tưới để tăng máu
+      let newHealth = Math.min(100, health + 25);
+      let newLevel = level;
+
+      if (health < 100 && newHealth >= 100) {
+        newLevel++;
+        logAction(`🌳 Cây đã lên level mới! Level: ${newLevel}`);
+      }
+
+      tx.update(treeRef, {
+        health: newHealth,
+        level: newLevel,
+        lastWatered: today,
+        lastDeductDate: today, // đánh dấu đã xử lý hôm nay
+      });
+
+      logAction("💧 Hai bạn đã cùng nhau tưới cây Tình Yêu!");
+    });
+  } catch (error) {
+    console.error("Error watering tree:", error);
+    logAction("❌ Lỗi khi tưới cây.");
+  } finally {
+    isTreeActionInProgress = false;
+  }
+}
+
+
+
       // ================================================================
       // === BỘ CÔNG CỤ MÔ PHỎNG CÂY TÌNH YÊU (DÀNH CHO KIỂM THỬ) ===
       // ================================================================
