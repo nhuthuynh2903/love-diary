@@ -1158,20 +1158,26 @@
             }
 
             if (lastWatered && lastWatered !== today) {
-              const lastWateredDate = new Date(lastWatered);
-              const todayDate = new Date(today);
-              const daysMissed = Math.floor(
-                (todayDate - lastWateredDate) / (1000 * 60 * 60 * 24)
-              );
+  const lastWateredDate = new Date(lastWatered);
+  const todayDate = new Date(today);
+  const daysMissed = Math.floor(
+    (todayDate - lastWateredDate) / (1000 * 60 * 60 * 24)
+  );
 
-              if (daysMissed > 0) {
-                const newHealth = Math.max(0, health - daysMissed * 25);
-                if (newHealth !== health) {
-                  treeRef.update({ health: newHealth });
-                  treeData.health = newHealth;
-                }
-              }
-            }
+  if (daysMissed > 0) {
+    // MỖI NGÀY CHỈ TRỪ 25 MỘT LẦN
+    const newHealth = Math.max(0, health - 25);
+
+    if (newHealth !== health) {
+      treeRef.update({
+        health: newHealth,
+        lastWatered: today // cập nhật để không bị trừ tiếp
+      });
+      treeData.health = newHealth;
+    }
+  }
+}
+
 
             const treeImageEl = document.querySelector("#loveTree img");
             if (treeData.health <= 0) {
